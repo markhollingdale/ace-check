@@ -9,6 +9,7 @@ import type {
   ProjectSummary,
   ReviewModule,
   Run,
+  RunListItem,
   RunProfile,
   RunSnapshot,
   ScannerDescriptor,
@@ -189,9 +190,16 @@ export async function deleteProject(id: string): Promise<void> {
 
 // --- Runs ------------------------------------------------------------------
 
-export async function listRuns(projectId: string): Promise<Run[]> {
+export async function listRuns(projectId: string): Promise<RunListItem[]> {
   const res = await fetch(`/api/projects/${projectId}/runs`);
-  return (await json<{ runs: Run[] }>(res)).runs;
+  return (await json<{ runs: RunListItem[] }>(res)).runs;
+}
+
+export async function deleteRuns(
+  projectId: string,
+  runIds: string[],
+): Promise<{ deleted: number; skipped: string[] }> {
+  return send(`/api/projects/${projectId}/runs/delete`, 'POST', { runIds });
 }
 
 export async function startRun(

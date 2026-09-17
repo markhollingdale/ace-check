@@ -420,6 +420,11 @@ export interface Run {
   webScanId?: string;
 }
 
+/** A run as listed for management, including its disk usage. */
+export interface RunListItem extends Run {
+  bytes: number;
+}
+
 export interface StageProgress {
   projectId: string;
   runId: string;

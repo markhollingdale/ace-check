@@ -69,6 +69,7 @@ import {
   listProjects,
   listRuns,
   newProjectId,
+  projectDir,
   readProject,
   readRun,
   readRunFindings,
@@ -231,6 +232,44 @@ const runningRuns = new Map<string, RunningRun>();
 
 function runKey(projectId: string, runId: string): string {
   return `${projectId}/${runId}`;
+}
+
+/** Total bytes under a directory, or 0 if it cannot be read. */
+async function directorySize(dir: string): Promise<number> {
+  let total = 0;
+  const stack = [dir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) break;
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+      } else if (entry.isFile()) {
+        try {
+          total += (await stat(full)).size;
+        } catch {
+          /* skip unreadable file */
+        }
+      }
+    }
+  }
+  return total;
+}
+
+/** Disk used by a run: its own directory plus any linked Lighthouse scan. */
+async function runBytes(run: Run): Promise<number> {
+  let total = await directorySize(path.join(projectDir(run.projectId), 'runs', run.id));
+  if (run.webScanId) {
+    total += await directorySize(path.join(scansRoot(), run.webScanId));
+  }
+  return total;
 }
 
 function hostsFromUrls(...urls: (string | undefined)[]): string[] {
@@ -399,7 +438,49 @@ app.get('/api/projects/:id/runs', async (c) => {
   const projectId = c.req.param('id');
   const project = await readProject(projectId);
   if (!project) return c.json({ error: 'Project not found' }, 404);
-  return c.json({ runs: await listRuns(projectId) });
+  const runs = await listRuns(projectId);
+  // Include disk usage so it is obvious which runs are worth clearing.
+  const withSizes = await Promise.all(
+    runs.map(async (run) => ({ ...run, bytes: await runBytes(run) })),
+  );
+  return c.json({ runs: withSizes });
+});
+
+/**
+ * Bulk-delete runs. Also removes the Lighthouse scan data each run owns, which
+ * would otherwise be orphaned and keep consuming disk.
+ */
+app.post('/api/projects/:id/runs/delete', async (c) => {
+  const projectId = c.req.param('id');
+  const project = await readProject(projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+
+  const body = await c.req.json().catch(() => ({}));
+  const runIds: string[] = Array.isArray(body?.runIds)
+    ? body.runIds.filter((id: unknown): id is string => typeof id === 'string')
+    : [];
+  if (runIds.length === 0) {
+    return c.json({ error: 'No runs selected.' }, 400);
+  }
+
+  let deleted = 0;
+  const skipped: string[] = [];
+  for (const runId of runIds) {
+    const state = runningRuns.get(runKey(projectId, runId));
+    if (state?.running) {
+      skipped.push(runId);
+      continue;
+    }
+    const run = await readRun(projectId, runId);
+    if (!run) continue;
+    if (run.webScanId) {
+      await deleteScan(run.webScanId).catch(() => undefined);
+    }
+    await deleteRun(projectId, runId);
+    deleted += 1;
+  }
+
+  return c.json({ deleted, skipped });
 });
 
 app.post('/api/projects/:id/runs', async (c) => {

@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
+  deleteRuns,
   getProject,
   getStages,
   runStage as runStageApi,
   startRun,
   listRuns,
 } from '../lib/api';
-import type { ProjectSnapshot, Run, StageDef, StageId } from '../lib/types';
-import { formatDate, formatDuration } from '../lib/format';
+import type {
+  ProjectSnapshot,
+  RunListItem,
+  StageDef,
+  StageId,
+} from '../lib/types';
+import { formatBytes, formatDate, formatDuration } from '../lib/format';
 import { useNow } from '../lib/useNow';
 import { Crumb, PageHeader } from '../components/Shell';
 import { VerdictBanner } from '../components/Verdict';
@@ -21,13 +27,16 @@ import {
   Spinner,
   EmptyState,
   Tabs,
+  cn,
 } from '../components/ui';
 
 export function ProjectPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
-  const [runs, setRuns] = useState<Run[]>([]);
+  const [runs, setRuns] = useState<RunListItem[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyStage, setBusyStage] = useState<StageId | null>(null);
@@ -68,6 +77,55 @@ export function ProjectPage() {
   }, [anyRunning, load]);
 
   const now = useNow(anyRunning);
+
+  const toggleOne = (runId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(runId)) next.delete(runId);
+      else next.add(runId);
+      return next;
+    });
+  };
+
+  const deletableIds = runs
+    .filter((r) => r.status !== 'running')
+    .map((r) => r.id);
+  const allSelected =
+    deletableIds.length > 0 && selected.size === deletableIds.length;
+  const selectedRunning = runs.some(
+    (r) => selected.has(r.id) && r.status === 'running',
+  );
+
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(deletableIds));
+  };
+
+  const removeRuns = async (runIds: string[], describe: string) => {
+    if (runIds.length === 0) return;
+    if (
+      !confirm(
+        `Delete ${describe}? This removes the run and its stored Lighthouse data. It cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteRuns(id, runIds);
+      setSelected(new Set());
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete runs.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const onDeleteSelected = () =>
+    removeRuns([...selected], `${selected.size} run${selected.size === 1 ? '' : 's'}`);
+
+  const onDeleteOne = (runId: string, label: string) =>
+    removeRuns([runId], `the "${label}" run`);
 
   const onRunAudit = async () => {
     if (!snapshot) return;
@@ -226,44 +284,130 @@ export function ProjectPage() {
               <EmptyState title="No runs yet" hint="Run an audit to get started." />
             ) : (
               <Card className="overflow-hidden">
+                {selected.size > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/[0.03] px-5 py-2.5">
+                    <span className="text-xs text-muted">
+                      {selected.size} selected ·{' '}
+                      {formatBytes(
+                        runs
+                          .filter((r) => selected.has(r.id))
+                          .reduce((n, r) => n + r.bytes, 0),
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedRunning && (
+                        <span className="text-xs text-amber-300">
+                          running runs are skipped
+                        </span>
+                      )}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setSelected(new Set())}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={onDeleteSelected}
+                        disabled={deleting}
+                      >
+                        {deleting
+                          ? 'Deleting...'
+                          : `Delete ${selected.size} run${
+                              selected.size === 1 ? '' : 's'
+                            }`}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+                      <th className="w-10 px-5 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all runs"
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) {
+                              el.indeterminate =
+                                selected.size > 0 && !allSelected;
+                            }
+                          }}
+                          onChange={toggleAll}
+                          className="h-4 w-4 accent-emerald-500"
+                        />
+                      </th>
                       <th className="px-5 py-3 font-medium">Run</th>
                       <th className="px-5 py-3 font-medium">Started</th>
                       <th className="px-5 py-3 font-medium">Duration</th>
                       <th className="px-5 py-3 font-medium">Status</th>
                       <th className="px-5 py-3 text-right font-medium">Findings</th>
+                      <th className="px-5 py-3 text-right font-medium">Size</th>
+                      <th className="px-5 py-3 text-right font-medium">
+                        <span className="sr-only">Actions</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {runs.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-b border-line/60 last:border-0 hover:bg-white/[0.03]"
-                      >
-                        <td className="px-5 py-3">
-                          <Link
-                            to={`/projects/${project.id}/runs/${r.id}`}
-                            className="font-medium text-ink-soft hover:text-accent hover:underline"
-                          >
-                            {r.label}
-                          </Link>
-                        </td>
-                        <td className="px-5 py-3 text-muted">
-                          {formatDate(r.startedAt)}
-                        </td>
-                        <td className="px-5 py-3 text-muted">
-                          {formatDuration(r.durationMs)}
-                        </td>
-                        <td className="px-5 py-3">
-                          <RunStatusPill status={r.status} />
-                        </td>
-                        <td className="px-5 py-3 text-right text-muted">
-                          {r.stages.reduce((n, x) => n + x.findings, 0)}
-                        </td>
-                      </tr>
-                    ))}
+                    {runs.map((r) => {
+                      const isRunning = r.status === 'running';
+                      return (
+                        <tr
+                          key={r.id}
+                          className={cn(
+                            'border-b border-line/60 last:border-0 hover:bg-white/[0.03]',
+                            selected.has(r.id) && 'bg-white/[0.03]',
+                          )}
+                        >
+                          <td className="px-5 py-3">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select run ${r.label}`}
+                              checked={selected.has(r.id)}
+                              disabled={isRunning}
+                              onChange={() => toggleOne(r.id)}
+                              className="h-4 w-4 accent-emerald-500 disabled:opacity-30"
+                            />
+                          </td>
+                          <td className="px-5 py-3">
+                            <Link
+                              to={`/projects/${project.id}/runs/${r.id}`}
+                              className="font-medium text-ink-soft hover:text-accent hover:underline"
+                            >
+                              {r.label}
+                            </Link>
+                          </td>
+                          <td className="px-5 py-3 text-muted">
+                            {formatDate(r.startedAt)}
+                          </td>
+                          <td className="px-5 py-3 text-muted">
+                            {formatDuration(r.durationMs)}
+                          </td>
+                          <td className="px-5 py-3">
+                            <RunStatusPill status={r.status} />
+                          </td>
+                          <td className="px-5 py-3 text-right text-muted">
+                            {r.stages.reduce((n, x) => n + x.findings, 0)}
+                          </td>
+                          <td className="px-5 py-3 text-right font-mono text-xs text-muted">
+                            {formatBytes(r.bytes)}
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isRunning || deleting}
+                              onClick={() => onDeleteOne(r.id, r.label)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </Card>
