@@ -2,14 +2,18 @@ import type {
   AuditProfile,
   Finding,
   FindingStatus,
-  Issue,
   PageSummary,
-  ProgressUpdate,
-  ReleaseResult,
+  Project,
+  ProjectSnapshot,
+  ProjectSummary,
   ReviewModule,
+  Run,
+  RunProfile,
+  RunSnapshot,
+  ScannerDescriptor,
   ScanComparison,
-  ScanMetadata,
-  ScanSummary,
+  StageId,
+  StageProgress,
 } from './types';
 
 async function json<T>(res: Response): Promise<T> {
@@ -23,65 +27,192 @@ async function json<T>(res: Response): Promise<T> {
       /* body was not JSON */
     }
     if (res.status >= 500) {
-      message += ' — is the local server running?';
+      message += ' - is the local server running?';
     }
     throw new Error(message);
   }
   return JSON.parse(text) as T;
 }
 
-export async function listScans(): Promise<ScanMetadata[]> {
-  const res = await fetch('/api/scans');
-  return (await json<{ scans: ScanMetadata[] }>(res)).scans;
-}
-
-export async function startScan(input: {
-  url: string;
-  codebasePath?: string;
-  config?: Partial<Record<string, unknown>>;
-}): Promise<string> {
-  const res = await fetch('/api/scans', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+async function send<T>(
+  url: string,
+  method: string,
+  body?: unknown,
+): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
   });
-  return (await json<{ scanId: string }>(res)).scanId;
+  return json<T>(res);
 }
 
-export async function getScan(
-  scanId: string,
-): Promise<{ metadata: ScanMetadata; summary: ScanSummary | null }> {
-  const res = await fetch(`/api/scans/${scanId}`);
-  return json(res);
+// --- Scanners & profiles ---------------------------------------------------
+
+export async function getScanners(refresh = false): Promise<ScannerDescriptor[]> {
+  const res = await fetch(`/api/scanners${refresh ? '?refresh=1' : ''}`);
+  return (await json<{ scanners: ScannerDescriptor[] }>(res)).scanners;
 }
 
-export async function getScanRelease(scanId: string): Promise<ReleaseResult> {
-  const res = await fetch(`/api/scans/${scanId}/release`);
-  return json(res);
+export async function getRunProfiles(): Promise<RunProfile[]> {
+  const res = await fetch('/api/run-profiles');
+  return (await json<{ profiles: RunProfile[] }>(res)).profiles;
 }
 
-export async function browseDirectory(dirPath: string): Promise<{
-  path: string;
-  parent: string;
-  entries: { name: string; path: string }[];
-}> {
-  const params = new URLSearchParams();
-  if (dirPath) params.set('path', dirPath);
-  const qs = params.toString();
-  const res = await fetch(`/api/fs/browse${qs ? `?${qs}` : ''}`);
-  return json(res);
+export interface AttributionsData {
+  generated: string;
+  totalPackages: number;
+  summary: { license: string; count: number }[];
+  packages: {
+    name: string;
+    versions: string[];
+    license: string;
+    homepage: string | null;
+    author: string | null;
+  }[];
+  externalTools: { name: string; license: string; url: string; note: string }[];
+  licenseTexts: Record<string, string>;
 }
 
-export async function getIssues(
-  scanId: string,
-  filters: { category?: string; severity?: string } = {},
-): Promise<Issue[]> {
-  const params = new URLSearchParams();
-  if (filters.category) params.set('category', filters.category);
-  if (filters.severity) params.set('severity', filters.severity);
-  const qs = params.toString();
-  const res = await fetch(`/api/scans/${scanId}/issues${qs ? `?${qs}` : ''}`);
-  return (await json<{ issues: Issue[] }>(res)).issues;
+export async function getAttributions(): Promise<AttributionsData> {
+  const res = await fetch('/attributions.json');
+  return json<AttributionsData>(res);
+}
+
+export interface DataPaths {
+  root: string;
+  scans: string;
+  projects: string;
+  logs: string;
+  targets: string;
+  overrideEnv: string | null;
+}
+
+export async function getDataPaths(): Promise<DataPaths> {
+  const res = await fetch('/api/config/paths');
+  return json<DataPaths>(res);
+}
+
+// --- Projects --------------------------------------------------------------
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  const res = await fetch('/api/projects');
+  return (await json<{ projects: ProjectSummary[] }>(res)).projects;
+}
+
+export async function createProject(input: {
+  name: string;
+  productionUrl?: string;
+  stagingUrl?: string;
+  codebasePath?: string;
+  profileId?: string;
+  authorised?: boolean;
+}): Promise<Project> {
+  return (
+    await send<{ project: Project }>('/api/projects', 'POST', input)
+  ).project;
+}
+
+export async function getProject(id: string): Promise<ProjectSnapshot> {
+  const res = await fetch(`/api/projects/${id}`);
+  return json<ProjectSnapshot>(res);
+}
+
+export async function updateProject(
+  id: string,
+  patch: Partial<Omit<Project, 'id' | 'createdAt'>>,
+): Promise<ProjectSnapshot> {
+  return send<ProjectSnapshot>(`/api/projects/${id}`, 'PATCH', patch);
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+}
+
+// --- Runs ------------------------------------------------------------------
+
+export async function listRuns(projectId: string): Promise<Run[]> {
+  const res = await fetch(`/api/projects/${projectId}/runs`);
+  return (await json<{ runs: Run[] }>(res)).runs;
+}
+
+export async function startRun(
+  projectId: string,
+  opts: { profileId?: string; stages?: StageId[] } = {},
+): Promise<Run> {
+  return (
+    await send<{ run: Run }>(`/api/projects/${projectId}/runs`, 'POST', opts)
+  ).run;
+}
+
+export async function getRun(
+  projectId: string,
+  runId: string,
+): Promise<RunSnapshot> {
+  const res = await fetch(`/api/projects/${projectId}/runs/${runId}`);
+  return json<RunSnapshot>(res);
+}
+
+export async function getRunProgress(
+  projectId: string,
+  runId: string,
+): Promise<StageProgress> {
+  const res = await fetch(`/api/projects/${projectId}/runs/${runId}/progress`);
+  return (await json<{ progress: StageProgress }>(res)).progress;
+}
+
+export async function cancelRun(
+  projectId: string,
+  runId: string,
+): Promise<void> {
+  await fetch(`/api/projects/${projectId}/runs/${runId}/cancel`, {
+    method: 'POST',
+  });
+}
+
+export async function runStage(
+  projectId: string,
+  runId: string,
+  stageId: StageId,
+): Promise<void> {
+  await send(
+    `/api/projects/${projectId}/runs/${runId}/stages/${stageId}/run`,
+    'POST',
+  );
+}
+
+export async function deleteRun(
+  projectId: string,
+  runId: string,
+): Promise<void> {
+  await fetch(`/api/projects/${projectId}/runs/${runId}`, { method: 'DELETE' });
+}
+
+export async function getRunReport(
+  projectId: string,
+  runId: string,
+  format: 'human' | 'ai' = 'human',
+): Promise<string> {
+  const res = await fetch(
+    `/api/projects/${projectId}/runs/${runId}/report?format=${format}`,
+  );
+  if (!res.ok) throw new Error('No report available for this run.');
+  return res.text();
+}
+
+export const runReportUrl = (
+  projectId: string,
+  runId: string,
+  format: 'human' | 'ai' = 'human',
+) => `/api/projects/${projectId}/runs/${runId}/report?format=${format}`;
+
+// --- Findings / pages / compare --------------------------------------------
+
+export async function getProjectFindings(
+  projectId: string,
+): Promise<{ findings: Finding[]; run: Run | null }> {
+  const res = await fetch(`/api/projects/${projectId}/findings`);
+  return json<{ findings: Finding[]; run: Run | null }>(res);
 }
 
 export async function getPages(scanId: string): Promise<PageSummary[]> {
@@ -97,60 +228,6 @@ export async function getPage(
   return (await json<{ page: PageSummary }>(res)).page;
 }
 
-export async function getProgress(scanId: string): Promise<ProgressUpdate> {
-  const res = await fetch(`/api/scans/${scanId}/progress`);
-  return (await json<{ progress: ProgressUpdate }>(res)).progress;
-}
-
-export async function cancelScan(scanId: string): Promise<void> {
-  await fetch(`/api/scans/${scanId}/cancel`, { method: 'POST' });
-}
-
-export async function retryFailed(scanId: string): Promise<void> {
-  await fetch(`/api/scans/${scanId}/retry-failed`, { method: 'POST' });
-}
-
-export async function deleteScan(scanId: string): Promise<void> {
-  await fetch(`/api/scans/${scanId}`, { method: 'DELETE' });
-}
-
-export async function getPrompt(
-  scanId: string,
-  mode = 'full',
-  format = 'markdown',
-): Promise<string> {
-  const res = await fetch(
-    `/api/scans/${scanId}/prompt?mode=${mode}&format=${format}`,
-  );
-  return res.text();
-}
-
-export async function getIssuePrompt(
-  scanId: string,
-  issueId: string,
-): Promise<string> {
-  const res = await fetch(`/api/scans/${scanId}/issues/${issueId}/prompt`);
-  return res.text();
-}
-
-export async function getAllIssuesPrompt(scanId: string): Promise<string> {
-  const res = await fetch(`/api/scans/${scanId}/investigation-prompt`);
-  return res.text();
-}
-
-export async function getPagePrompt(
-  scanId: string,
-  slug: string,
-): Promise<string> {
-  const res = await fetch(`/api/scans/${scanId}/pages/${slug}/prompt`);
-  return res.text();
-}
-
-export async function getReport(scanId: string, type: string): Promise<string> {
-  const res = await fetch(`/api/scans/${scanId}/reports/${type}`);
-  return res.text();
-}
-
 export async function getComparison(
   scanId: string,
   otherId: string,
@@ -159,32 +236,60 @@ export async function getComparison(
   return (await json<{ comparison: ScanComparison }>(res)).comparison;
 }
 
-export const reportUrl = (scanId: string, type: string) =>
-  `/api/scans/${scanId}/reports/${type}`;
 export const lighthouseJsonUrl = (scanId: string, slug: string) =>
   `/api/scans/${scanId}/pages/${slug}/lighthouse.json`;
 export const lighthouseHtmlUrl = (scanId: string, slug: string) =>
   `/api/scans/${scanId}/pages/${slug}/report.html`;
-export const exportUrl = (scanId: string) => `/api/scans/${scanId}/export`;
 
-export async function runChecks(codebasePath: string): Promise<{
-  findings: Finding[];
-  report?: { jsonPath: string; markdownPath: string };
+// --- Finding lifecycle -----------------------------------------------------
+
+export async function getFindingStatuses(
+  codebasePath: string,
+): Promise<Record<string, FindingStatus>> {
+  const res = await fetch(
+    `/api/findings/status?codebasePath=${encodeURIComponent(codebasePath)}`,
+  );
+  return (await json<{ statuses: Record<string, FindingStatus> }>(res)).statuses;
+}
+
+export async function setFindingStatus(
+  codebasePath: string,
+  findingId: string,
+  status: FindingStatus,
+): Promise<Record<string, FindingStatus>> {
+  return (
+    await send<{ statuses: Record<string, FindingStatus> }>(
+      '/api/findings/status',
+      'POST',
+      { codebasePath, findingId, status },
+    )
+  ).statuses;
+}
+
+// --- Filesystem ------------------------------------------------------------
+
+export async function browseDirectory(dirPath: string): Promise<{
+  path: string;
+  parent: string;
+  entries: { name: string; path: string }[];
 }> {
-  const res = await fetch('/api/checks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ codebasePath }),
-  });
+  const params = new URLSearchParams();
+  if (dirPath) params.set('path', dirPath);
+  const qs = params.toString();
+  const res = await fetch(`/api/fs/browse${qs ? `?${qs}` : ''}`);
   return json(res);
 }
+
+// --- AI reviews ------------------------------------------------------------
 
 export async function listProfiles(): Promise<AuditProfile[]> {
   const res = await fetch('/api/reviews/profiles');
   return (await json<{ profiles: AuditProfile[] }>(res)).profiles;
 }
 
-export async function listReviewModules(profile?: string): Promise<ReviewModule[]> {
+export async function listReviewModules(
+  profile?: string,
+): Promise<ReviewModule[]> {
   const res = await fetch(
     `/api/reviews${profile ? `?profile=${encodeURIComponent(profile)}` : ''}`,
   );
@@ -229,18 +334,6 @@ export async function ingestReport(
   return (await json<{ findings: Finding[] }>(res)).findings;
 }
 
-export async function getRelease(
-  codebasePath?: string,
-  scanId?: string,
-): Promise<ReleaseResult> {
-  const res = await fetch('/api/release', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ codebasePath, scanId }),
-  });
-  return json(res);
-}
-
 export async function runReview(
   codebasePath: string,
   moduleNumber: number,
@@ -261,26 +354,4 @@ export async function runReview(
     throw new Error(message);
   }
   return (await json<{ response: string }>(res)).response;
-}
-
-export async function getFindingStatuses(
-  codebasePath: string,
-): Promise<Record<string, FindingStatus>> {
-  const res = await fetch(
-    `/api/findings/status?codebasePath=${encodeURIComponent(codebasePath)}`,
-  );
-  return (await json<{ statuses: Record<string, FindingStatus> }>(res)).statuses;
-}
-
-export async function setFindingStatus(
-  codebasePath: string,
-  findingId: string,
-  status: FindingStatus,
-): Promise<Record<string, FindingStatus>> {
-  const res = await fetch('/api/findings/status', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ codebasePath, findingId, status }),
-  });
-  return (await json<{ statuses: Record<string, FindingStatus> }>(res)).statuses;
 }

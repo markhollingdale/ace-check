@@ -45,7 +45,7 @@ Include:
 Provide a score between:
 
 ```
-0 – 100
+0 - 100
 ```
 
 Suggested guidance:

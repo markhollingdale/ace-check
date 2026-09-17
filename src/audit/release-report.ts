@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Finding, ReleaseGate } from '../types.js';
 import type { CorrelatedGroup } from './correlate.js';
+import { targetStateDir } from '../paths.js';
 
 export interface ReleaseReportMeta {
   project: string;
@@ -28,7 +29,7 @@ const SEVERITY_RANK: Record<string, number> = {
 export function releaseReportMarkdown(report: ReleaseReport): string {
   const { meta, gate, findings, correlations } = report;
   const lines: string[] = [];
-  lines.push(`# Release Report — ${meta.project}`);
+  lines.push(`# Release Report - ${meta.project}`);
   lines.push('');
   lines.push(`**Date:** ${meta.date}`);
   lines.push('');
@@ -70,7 +71,7 @@ export function releaseReportMarkdown(report: ReleaseReport): string {
       const loc = f.evidence.file
         ? ` (${f.evidence.file}${f.evidence.line ? `:${f.evidence.line}` : ''})`
         : '';
-      lines.push(`- **[${f.severity}] ${f.id}** — ${f.title}${loc}`);
+      lines.push(`- **[${f.severity}] ${f.id}** - ${f.title}${loc}`);
     }
     lines.push('');
   }
@@ -105,7 +106,7 @@ export function releaseReportAiMarkdown(report: ReleaseReport): string {
   lines.push('Top findings:');
   for (const f of top) {
     const loc = f.evidence.file
-      ? ` — ${f.evidence.file}${f.evidence.line ? `:${f.evidence.line}` : ''}`
+      ? ` - ${f.evidence.file}${f.evidence.line ? `:${f.evidence.line}` : ''}`
       : '';
     lines.push(`- [${f.severity}] ${f.id}: ${f.title}${loc}`);
   }
@@ -122,7 +123,7 @@ export function releaseReportAiMarkdown(report: ReleaseReport): string {
 }
 
 export function reviewFindingsPath(codebasePath: string): string {
-  return path.join(codebasePath, '.acecheck', 'review-findings.json');
+  return path.join(targetStateDir(codebasePath), 'review-findings.json');
 }
 
 export function readReviewFindings(codebasePath: string): Finding[] {

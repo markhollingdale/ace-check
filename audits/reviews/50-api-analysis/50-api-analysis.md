@@ -278,18 +278,18 @@ Review:
 - Cursor design
 - Whether pagination/filter combinatorics create an infinite crawlable URL space (reference SEO review for robots/canonical impact)
 
-Evaluate usability and consistency. Flag unbounded `?page`/`?filter` permutations that make brute-force crawl cheap — Security owns the abuse flag, you own the design disclosure.
+Evaluate usability and consistency. Flag unbounded `?page`/`?filter` permutations that make brute-force crawl cheap - Security owns the abuse flag, you own the design disclosure.
 
 ---
 
-# Public Read Abuse Surface — Rate Limit Inventory (Co-owned with Security)
+# Public Read Abuse Surface - Rate Limit Inventory (Co-owned with Security)
 
 For every `publicProcedure` / unauthenticated route, document in Phase 1 and verify in Phase 2:
 
 - Procedure name, router file, cost (DB/PostGIS/external), and limiter (if any): middleware, Upstash Redis, DB sliding window, or none
-- Typical unthrottled gaps to flag as High: `search.search`, `venue.search`, `event.list/getBySlug/getById/getUpcoming`, `venue.list/getById`, `category.list`, `ad.getForPosition` — any PostGIS or aggregation reachable anon without `ratelimit.limit(ip)` before DB
+- Typical unthrottled gaps to flag as High: `search.search`, `venue.search`, `event.list/getBySlug/getById/getUpcoming`, `venue.list/getById`, `category.list`, `ad.getForPosition` - any PostGIS or aggregation reachable anon without `ratelimit.limit(ip)` before DB
 - That `429 Too Many Requests` with `Retry-After` is returned (not `200` with empty) and that errors use the same shape as other procedures
-- That expensive reads are not same-tier as cheap reads — search should be tighter than `category.list`
+- That expensive reads are not same-tier as cheap reads - search should be tighter than `category.list`
 
 Security owns "is it exploitable?", you own "is the contract inventoried and consistently enforced?". Reference Security finding ID rather than duplicating.
 

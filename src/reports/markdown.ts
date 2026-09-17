@@ -24,14 +24,14 @@ export interface ReportInput {
 }
 
 export function formatBytes(bytes: number | null): string {
-  if (bytes == null) return '—';
+  if (bytes == null) return '-';
   if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(2)} MB`;
   if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
   return `${Math.round(bytes)} B`;
 }
 
 export function formatMs(ms: number | null): string {
-  if (ms == null) return '—';
+  if (ms == null) return '-';
   if (ms >= 1_000) return `${(ms / 1_000).toFixed(2)} s`;
   return `${Math.round(ms)} ms`;
 }
@@ -103,7 +103,7 @@ function formatBytesOrMetric(issue: Issue): string {
   ) {
     return formatBytes(issue.avgNumericValue);
   }
-  if (issue.avgNumericValue == null) return '—';
+  if (issue.avgNumericValue == null) return '-';
   return issue.displayValue || String(Math.round(issue.avgNumericValue));
 }
 
@@ -114,7 +114,7 @@ function scoreTable(summary: ScanSummary): string {
   const rows = CATEGORIES.map((cat) => {
     const cells = devices.map((d) => {
       const agg = summary.deviceScores[d]?.[cat];
-      return agg ? String(agg.median ?? agg.average ?? '—') : '—';
+      return agg ? String(agg.median ?? agg.average ?? '-') : '-';
     });
     return [CATEGORY_LABELS[cat], ...cells];
   });
@@ -129,12 +129,12 @@ function categoryLine(summary: ScanSummary, category: Category): string {
   if (summary.devices.length === 1) {
     const device = summary.devices[0];
     const agg = summary.deviceScores[device]?.[category];
-    return `${DEVICE_LABELS[device]}: ${agg?.median ?? agg?.average ?? '—'}`;
+    return `${DEVICE_LABELS[device]}: ${agg?.median ?? agg?.average ?? '-'}`;
   }
   return summary.devices
     .map((d) => {
       const agg = summary.deviceScores[d]?.[category];
-      return `${DEVICE_LABELS[d]}: ${agg?.median ?? agg?.average ?? '—'}`;
+      return `${DEVICE_LABELS[d]}: ${agg?.median ?? agg?.average ?? '-'}`;
     })
     .join(' · ');
 }
@@ -147,16 +147,16 @@ function performanceSection(summary: ScanSummary): string {
     lines.push(`### ${DEVICE_LABELS[device]}`);
     lines.push('');
     lines.push(
-      `Median: ${agg?.median ?? '—'} · Worst: ${agg?.min ?? '—'} · Best: ${agg?.max ?? '—'}`,
+      `Median: ${agg?.median ?? '-'} · Worst: ${agg?.min ?? '-'} · Best: ${agg?.max ?? '-'}`,
     );
     lines.push('');
     lines.push(`- LCP (median): ${formatMs(metrics?.lcpMedian ?? null)}`);
-    lines.push(`- CLS (median): ${metrics?.clsMedian ?? '—'}`);
+    lines.push(`- CLS (median): ${metrics?.clsMedian ?? '-'}`);
     lines.push(`- TBT (median): ${formatMs(metrics?.tbtMedian ?? null)}`);
     lines.push(`- FCP (median): ${formatMs(metrics?.fcpMedian ?? null)}`);
     lines.push(`- Speed Index (median): ${formatMs(metrics?.speedIndexMedian ?? null)}`);
     lines.push(`- Total page weight (median): ${formatBytes(metrics?.totalByteWeightMedian ?? null)}`);
-    lines.push(`- Request count (median): ${metrics?.requestCountMedian ?? '—'}`);
+    lines.push(`- Request count (median): ${metrics?.requestCountMedian ?? '-'}`);
     lines.push('');
   }
   return lines.join('\n');

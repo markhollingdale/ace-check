@@ -128,7 +128,7 @@ export function renderContext(ctx: ProjectContext): string {
 function renderFindings(findings: Finding[]): string {
   const lines = findings.slice(0, 40).map(
     (f) =>
-      `- [${f.severity}] ${f.id} — ${f.title}${
+      `- [${f.severity}] ${f.id} - ${f.title}${
         f.evidence.file ? ` (${f.evidence.file}${f.evidence.line ? `:${f.evidence.line}` : ''})` : ''
       }`,
   );

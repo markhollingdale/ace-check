@@ -125,7 +125,7 @@ Document:
 Document:
 
 - Sitemap (generation method `app/sitemap.ts` vs static, `lastModified` correctness, whether it lists canonical URLs only without `?page`/`?sort`/`?filter` variants, `changeFrequency`/`priority` if used)
-- Robots.txt (`public/robots.txt` vs `app/robots.ts` — which takes precedence in Next.js, per-UA rules, Sitemap directive)
+- Robots.txt (`public/robots.txt` vs `app/robots.ts` - which takes precedence in Next.js, per-UA rules, Sitemap directive)
 - Canonical strategy (`alternates.canonical` / `<link rel="canonical">`, whether filtered/paginated variants canonicalise to clean base URL)
 - Robots directives (`noindex`, `nofollow` on filtered search, private routes)
 - Redirect strategy
@@ -178,14 +178,14 @@ framework/20-review-framework.md
 
 ---
 
-# Crawlability — Including AI-Bot Split & Crawl-Trap Prevention
+# Crawlability - Including AI-Bot Split & Crawl-Trap Prevention
 
 Review:
 
-- Robots.txt (if Next.js: `app/robots.ts` generates it — verify file actually renders; `public/robots.txt` is ignored when `app/robots.ts` exists)
+- Robots.txt (if Next.js: `app/robots.ts` generates it - verify file actually renders; `public/robots.txt` is ignored when `app/robots.ts` exists)
 - XML sitemap (canonical URLs only? `lastModified` real date vs `new Date()` meaningless now?)
 - Crawl depth / internal links / redirects / broken links
-- **AI crawler split rules (Critical for abuse):** Good bots respect `robots.txt`, bad scrapers spoof it — both matter. Verify:
+- **AI crawler split rules (Critical for abuse):** Good bots respect `robots.txt`, bad scrapers spoof it - both matter. Verify:
   - `User-agent: GPTBot`, `ChatGPT-User`, `ClaudeBot`, `Bytespider`, `CCBot`, `PerplexityBot`, `Google-Extended` → `Disallow: /` (you rarely need LLM training crawl)
   - `User-agent: Googlebot`, `Bingbot` → allow canonical pages only
   - `User-agent: *` → `Disallow: /api/`, `Disallow: /search`, `Disallow: /*?*sort=`, `Disallow: /*?*filter=`, `Disallow: /*?*page=`, plus any app-specific private paths (`/favorites`, `/dashboard`, `/admin`)
@@ -198,15 +198,15 @@ Cross-reference: Security owns "can it be abused via crawl?", Performance owns "
 
 ---
 
-# Indexability — Canonical Collapse for Filtered Variants
+# Indexability - Canonical Collapse for Filtered Variants
 
 Review:
 
 - Meta robots (`index, follow` vs `noindex, follow` for filtered/search variants)
-- Canonical tags (`<link rel="canonical">` or `metadata.alternates.canonical` in Next.js — must point filtered `/whats-on?sort=...&filter=...` to clean base URL so engines treat permutations as duplicates)
+- Canonical tags (`<link rel="canonical">` or `metadata.alternates.canonical` in Next.js - must point filtered `/whats-on?sort=...&filter=...` to clean base URL so engines treat permutations as duplicates)
 - Duplicate pages / near-duplicates from query permutations
-- Parameter handling (Google Search Console param handling is gone — canonical + robots must do it)
-- Noindex usage (filtered search pages: `noindex, follow` if disallowed in robots is not enough — belt and suspenders)
+- Parameter handling (Google Search Console param handling is gone - canonical + robots must do it)
+- Noindex usage (filtered search pages: `noindex, follow` if disallowed in robots is not enough - belt and suspenders)
 - Auth/private pages (`/favorites`, `/dashboard`) must be `noindex` regardless of robots
 
 Identify pages that may not index correctly **or that generate duplicate crawl load**.

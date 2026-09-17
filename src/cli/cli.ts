@@ -22,7 +22,7 @@ interface CliOptions {
 
 function printHelp(): void {
   console.log(`
-acecheck — check everything, ship with confidence
+acecheck - check everything, ship with confidence
 
 Usage:
   acecheck <url> [options]
@@ -92,7 +92,7 @@ function parseArgs(argv: string[]): CliOptions {
 }
 
 function formatScore(score: number | null): string {
-  return score == null ? '—' : String(score);
+  return score == null ? '-' : String(score);
 }
 
 async function runCodebaseChecks(codebase: string): Promise<void> {
@@ -176,7 +176,7 @@ async function main(): Promise<void> {
         process.stdout.write(`\r  ${update.message}          `);
       } else if (update.status === 'scanning') {
         process.stdout.write(
-          `\r  Scanning ${update.scanned}/${update.total} (${update.failed} failed) — ${update.currentUrl || ''}          `,
+          `\r  Scanning ${update.scanned}/${update.total} (${update.failed} failed) - ${update.currentUrl || ''}          `,
         );
       } else if (update.status === 'analysing' || update.status === 'reporting') {
         process.stdout.write(`\r  ${update.message}          `);
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
       console.log('');
       console.log('Top issues to investigate:');
       for (const issue of issues.slice(0, 5)) {
-        console.log(`  [${issue.severity}] ${issue.title} — ${issue.count} pages`);
+        console.log(`  [${issue.severity}] ${issue.title} - ${issue.count} pages`);
       }
     }
   } else {

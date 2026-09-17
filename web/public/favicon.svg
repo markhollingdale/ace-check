@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AceCheck">
+  <defs>
+    <linearGradient id="ace" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a5b4fc" />
+      <stop offset="0.5" stop-color="#7c8cff" />
+      <stop offset="1" stop-color="#38e1d0" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#ace)" />
+  <path
+    fill="#070912"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M32 12 L47.5 52 L39.9 52 L36.7 43 L27.3 43 L24.1 52 L16.5 52 Z M32 22.5 L29.4 32 L34.6 32 Z"
+  />
+</svg>

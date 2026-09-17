@@ -286,7 +286,7 @@ Estimate unnecessary bandwidth expenditure.
 
 ---
 
-# Cost Amplification Risks — Including Crawl Storm
+# Cost Amplification Risks - Including Crawl Storm
 
 Identify technical implementations that could rapidly increase costs.
 
@@ -310,9 +310,9 @@ Document:
 - Requests: assume `100k requests` over `24h` (legitimate crawler) and `1k req/min` burst (aggressive scrape)
 - Current posture: if detail pages are `no-store` / no `revalidate` and `app/api/trpc` is `no-store`, then `100k hits = 100k SSR renders + 100k * (generateMetadata query + page query + N client tRPC fetches)` with PostGIS.
 - Model before/after: `uncached cost = 100k * (Serverless GB-s + DB compute + Data Transfer)` vs `ISR 300s cost = ~ (unique pages / 300s) * DB cost + 99% CDN hits (≈ $0)`. Even rough `$/1k requests` is enough to justify P0 vs P2.
-- Cross-reference Performance (is it cacheable?) and Security (is it throttled?) — you own "how much does the storm cost?".
+- Cross-reference Performance (is it cacheable?) and Security (is it throttled?) - you own "how much does the storm cost?".
 
-Flag as **Critical** if a single `search.search` with PostGIS can be called anon without limit and without cache — that proc alone can dominate the bill.
+Flag as **Critical** if a single `search.search` with PostGIS can be called anon without limit and without cache - that proc alone can dominate the bill.
 
 ---
 
@@ -349,16 +349,16 @@ If exact figures are unavailable, provide reasoned estimates based on the implem
 
 ---
 
-# Cost Controls — Including Platform Spend Caps
+# Cost Controls - Including Platform Spend Caps
 
 Review:
 
-- Rate limiting (and whether it actually covers **read** procs — reference Security inventory)
+- Rate limiting (and whether it actually covers **read** procs - reference Security inventory)
 - Usage quotas / soft & hard limits
 - Billing alerts (if Vercel: Spend Alerts 50/75/100%; if Neon/Supabase: compute/billing alerts)
 - Spend monitoring / dashboards / log-based billing alerts
 - Administrative controls (Spend Limits / Pause project, Attack Challenge Mode toggle access)
-- Caching as cost control (if public pages are ISR-cached, bot traffic is absorbed at CDN for ~$0 — cheapest control)
+- Caching as cost control (if public pages are ISR-cached, bot traffic is absorbed at CDN for ~$0 - cheapest control)
 
 Evaluate how effectively the application prevents unexpected expenditure. An expensive uncached search with no limit and no alerts is a **Critical** cost control failure even if code quality is high.
 

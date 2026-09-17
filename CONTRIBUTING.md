@@ -33,7 +33,7 @@ web/            React + Vite + Tailwind frontend
 
 - TypeScript throughout, strict mode.
 - Both the GUI and the CLI share the same scanner core (`src/scanner`).
-- Never modify raw Lighthouse output — derived data must remain traceable.
+- Never modify raw Lighthouse output - derived data must remain traceable.
 - Keep concurrency conservative by default; do not hammer target sites.
 
 ## Reporting issues

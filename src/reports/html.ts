@@ -40,8 +40,8 @@ function scoreCards(input: ReportInput): string {
         return `
       <div class="card">
         <div class="card-label">${label}</div>
-        <div class="score" style="color:${scoreColor(value)}">${value ?? '—'}</div>
-        <div class="sub">median ${agg?.min ?? '—'}–${agg?.max ?? '—'}</div>
+        <div class="score" style="color:${scoreColor(value)}">${value ?? '-'}</div>
+        <div class="sub">median ${agg?.min ?? '-'}-${agg?.max ?? '-'}</div>
       </div>`;
       }),
     )
@@ -119,10 +119,10 @@ function pageTable(input: ReportInput): string {
       return `<tr>
         <td>${esc(p.url)}</td>
         ${deviceCell}
-        <td style="color:${scoreColor(perf)}">${perf ?? '—'}</td>
-        <td style="color:${scoreColor(a11y)}">${a11y ?? '—'}</td>
-        <td style="color:${scoreColor(bps)}">${bps ?? '—'}</td>
-        <td style="color:${scoreColor(seo)}">${seo ?? '—'}</td>
+        <td style="color:${scoreColor(perf)}">${perf ?? '-'}</td>
+        <td style="color:${scoreColor(a11y)}">${a11y ?? '-'}</td>
+        <td style="color:${scoreColor(bps)}">${bps ?? '-'}</td>
+        <td style="color:${scoreColor(seo)}">${seo ?? '-'}</td>
         <td>${esc(p.template)}</td>
       </tr>`;
     })
@@ -140,15 +140,15 @@ export function generateHtmlReport(input: ReportInput): string {
       const agg = summary.deviceScores[device]?.performance;
       return `
     <section><h2>${DEVICE_LABELS[device]} Performance</h2>
-    <p class="sub">Median ${agg?.median ?? '—'} · Worst ${agg?.min ?? '—'} · Best ${agg?.max ?? '—'}</p>
+    <p class="sub">Median ${agg?.median ?? '-'} · Worst ${agg?.min ?? '-'} · Best ${agg?.max ?? '-'}</p>
     <ul class="metrics">
       <li>LCP (median): ${formatMs(metrics?.lcpMedian ?? null)}</li>
-      <li>CLS (median): ${metrics?.clsMedian ?? '—'}</li>
+      <li>CLS (median): ${metrics?.clsMedian ?? '-'}</li>
       <li>TBT (median): ${formatMs(metrics?.tbtMedian ?? null)}</li>
       <li>FCP (median): ${formatMs(metrics?.fcpMedian ?? null)}</li>
       <li>Speed Index (median): ${formatMs(metrics?.speedIndexMedian ?? null)}</li>
       <li>Page weight (median): ${formatBytes(metrics?.totalByteWeightMedian ?? null)}</li>
-      <li>Requests (median): ${metrics?.requestCountMedian ?? '—'}</li>
+      <li>Requests (median): ${metrics?.requestCountMedian ?? '-'}</li>
     </ul></section>`;
     })
     .join('');
@@ -162,7 +162,7 @@ export function generateHtmlReport(input: ReportInput): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Site Audit — ${esc(metadata.url)}</title>
+<title>Site Audit - ${esc(metadata.url)}</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }

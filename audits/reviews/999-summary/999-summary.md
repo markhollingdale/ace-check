@@ -26,7 +26,7 @@ The Summary may run with **any subset** of the review reports present. If any re
 
 - List every missing review report in an explicit **warning block** at the top of the report.
 - Produce the summary using only the reports that exist.
-- Do **not** silently omit missing reviews — the warning must be prominent and must name them.
+- Do **not** silently omit missing reviews - the warning must be prominent and must name them.
 
 Before producing the summary, check which of the following reports exist in:
 
@@ -194,13 +194,13 @@ Explain why. If `Production Ready: YES` but the pre-live gate is unsigned, downg
 
 ## 6b. Manual Runbooks & Pre-Live Gate (Cannot Be Verified From Code)
 
-You **must** surface manual checks so the human does not miss them — code reports alone are insufficient.
+You **must** surface manual checks so the human does not miss them - code reports alone are insufficient.
 
 Check in the repo (and in Production Readiness Phase 1 doc) whether these exist and are signed:
 
-- `docs/runbooks/vercel-neon-manual-setup.md` — Vercel Firewall + Spend + Neon/Supabase pooling (dashboard toggles)
-- `docs/runbooks/abuse-red-team-playbook.md` — 6 scripted curl/k6 attack scenarios
-- `docs/runbooks/pre-live-gate.md` — night-before gate with sign-off table
+- `docs/runbooks/vercel-neon-manual-setup.md` - Vercel Firewall + Spend + Neon/Supabase pooling (dashboard toggles)
+- `docs/runbooks/abuse-red-team-playbook.md` - 6 scripted curl/k6 attack scenarios
+- `docs/runbooks/pre-live-gate.md` - night-before gate with sign-off table
 
 Report:
 
@@ -212,7 +212,7 @@ Report:
 > ⚠️ MANUAL GATE NOT SIGNED: Walk docs/runbooks/pre-live-gate.md (sections 1-4) and paste curl/k6/drill evidence before trusting `Production Ready: YES`.
 ```
 
-This section is mandatory even when all code reviews are `YES` — the bill-related toggles live outside code.
+This section is mandatory even when all code reviews are `YES` - the bill-related toggles live outside code.
 
 ---
 
@@ -336,7 +336,7 @@ Aggregate and synthesise.
 
 When scores conflict between reviews, note the discrepancy.
 
-**Never silently produce a partial summary** — if reports are missing, the warning block is mandatory.
+**Never silently produce a partial summary** - if reports are missing, the warning block is mandatory.
 
 Prioritise clarity and actionability.
 

@@ -70,13 +70,13 @@ Based on the selection, read the corresponding review document from the paths be
 
 If the user selects **19 (Full Suite)**, stop here and follow `run-full-suite.md` instead.
 
-## Runbooks (Manual Checks — Code Cannot Prove ON)
+## Runbooks (Manual Checks - Code Cannot Prove ON)
 
 The following require human dashboard clicks. Every review that touches them must surface them as a finding, and the Summary must surface them in §6b:
 
-- `docs/runbooks/vercel-neon-manual-setup.md` — Vercel Firewall / Spend / Neon pooling
-- `docs/runbooks/abuse-red-team-playbook.md` — 6 curl/k6 attack drills
-- `docs/runbooks/pre-live-gate.md` — night-before sign-off gate (blocks `Production Ready: YES` if unsigned)
+- `docs/runbooks/vercel-neon-manual-setup.md` - Vercel Firewall / Spend / Neon pooling
+- `docs/runbooks/abuse-red-team-playbook.md` - 6 curl/k6 attack drills
+- `docs/runbooks/pre-live-gate.md` - night-before sign-off gate (blocks `Production Ready: YES` if unsigned)
 
 If you run **Full Suite**, the Summary will emit `⚠️ MANUAL GATE NOT SIGNED` until `pre-live-gate.md` is walked. Do not suppress this.
 

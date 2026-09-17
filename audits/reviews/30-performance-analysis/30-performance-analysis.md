@@ -248,7 +248,7 @@ Attempt to identify unnecessary processing.
 
 ---
 
-# Caching Strategy — Including Crawl Resilience (Edge Absorption)
+# Caching Strategy - Including Crawl Resilience (Edge Absorption)
 
 Review:
 
@@ -262,14 +262,14 @@ Review:
 
 Verify caching is used appropriately.
 
-**Crawl storm absorption — the $ check:**
+**Crawl storm absorption - the $ check:**
 
-1. For every public detail/search page (`/events/[slug]`, `/venues/[slug]`, `/whats-on`, `/calendar`, home sections) verify it is **not** `dynamic = 'force-dynamic'` with double DB query (`generateMetadata` + `page`) and `no-store` on every hit. Ideal: `export const revalidate = 300` (or `60` for search) so 100k bot hits = CDN hits after first render. Engagement counts stay live via separate client fetch — do not block ISR because counts are dynamic.
+1. For every public detail/search page (`/events/[slug]`, `/venues/[slug]`, `/whats-on`, `/calendar`, home sections) verify it is **not** `dynamic = 'force-dynamic'` with double DB query (`generateMetadata` + `page`) and `no-store` on every hit. Ideal: `export const revalidate = 300` (or `60` for search) so 100k bot hits = CDN hits after first render. Engagement counts stay live via separate client fetch - do not block ISR because counts are dynamic.
 2. If `app/api/trpc/[trpc]/route.ts` sets `Cache-Control: no-store` globally, flag: public reads (`event.list`, `venue.list`, `category.list`, `search.search`, `ad.getForPosition`) should allow edge caching or at least a short `s-maxage` with `stale-while-revalidate`. Mutations must remain `no-store`.
 3. Confirm `s-maxage` is used for ISR/SSG shells and that client-fetched tRPC sections do not defeat CDN (use client cache + server revalidation separately).
-4. Check canonical collapse: filter permutations (`?q=&where=&category=&sort=&dateFrom=&radius=&priceMax=`) that are uncachable duplicates still generate distinct cache keys — these are crawl traps even with CDN.
+4. Check canonical collapse: filter permutations (`?q=&where=&category=&sort=&dateFrom=&radius=&priceMax=`) that are uncachable duplicates still generate distinct cache keys - these are crawl traps even with CDN.
 
-Reference Security for abuse vector, Cost for dollar impact — you own "is it cacheable?".
+Reference Security for abuse vector, Cost for dollar impact - you own "is it cacheable?".
 
 ---
 
@@ -339,7 +339,7 @@ Identify opportunities to reduce external dependency latency.
 
 ---
 
-# Cost Efficiency — Serverless / DB Amplification
+# Cost Efficiency - Serverless / DB Amplification
 
 Identify performance issues that may unnecessarily increase operational costs.
 
@@ -353,11 +353,11 @@ Examples:
 - Inefficient polling
 - Infinite crawl spaces generating unique cache keys per permutation
 
-Estimate potential cost impact where practical — reference Cost Analysis for dollar modelling, but flag uncached public pages as cost amplification here.
+Estimate potential cost impact where practical - reference Cost Analysis for dollar modelling, but flag uncached public pages as cost amplification here.
 
 ---
 
-# Load Readiness — Including Bot Burst
+# Load Readiness - Including Bot Burst
 
 Assess how well the application would perform under increasing load.
 
@@ -367,13 +367,13 @@ Consider:
 - Sustained traffic
 - Background processing
 - Queue congestion
-- Database contention (if Neon/Supabase: connection pool exhaustion under `no-store` storm — `max_connections` / PgBouncer queue)
+- Database contention (if Neon/Supabase: connection pool exhaustion under `no-store` storm - `max_connections` / PgBouncer queue)
 - Memory pressure
 - Serverless concurrency limits (if Vercel: function invocation count, cold starts, throttle)
 
 Identify likely scaling limits.
 
-Simulate mentally: with current `revalidate`/cache headers, how many DB queries per 1k crawler hits? Without ISR, `1k hits = 1k SSR + 1k * N PostGIS` — model before/after.
+Simulate mentally: with current `revalidate`/cache headers, how many DB queries per 1k crawler hits? Without ISR, `1k hits = 1k SSR + 1k * N PostGIS` - model before/after.
 
 ---
 

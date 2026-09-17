@@ -1,12 +1,12 @@
 export function formatBytes(bytes: number | null | undefined): string {
-  if (bytes == null) return '—';
+  if (bytes == null) return '-';
   if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(2)} MB`;
   if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
   return `${Math.round(bytes)} B`;
 }
 
 export function formatMs(ms: number | null | undefined): string {
-  if (ms == null) return '—';
+  if (ms == null) return '-';
   if (ms >= 1_000) return `${(ms / 1_000).toFixed(2)} s`;
   return `${Math.round(ms)} ms`;
 }

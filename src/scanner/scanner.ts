@@ -313,7 +313,7 @@ export async function runScan(
       for (const device of devices) {
         items.push({
           key: `${base}-${device}`,
-          label: `${base} — ${device}`,
+          label: `${base} - ${device}`,
           kind: 'page',
           status: 'pending',
         });

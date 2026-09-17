@@ -8,12 +8,9 @@ import type {
   ScanMetadata,
   ScanSummary,
 } from '../types.js';
+import { scansRoot } from '../paths.js';
 
-const DEFAULT_SCANS_DIR = path.resolve(process.cwd(), 'scans');
-
-export function scansRoot(): string {
-  return process.env.SITE_AUDIT_SCANS_DIR || DEFAULT_SCANS_DIR;
-}
+export { scansRoot };
 
 export async function ensureScansRoot(): Promise<string> {
   const dir = scansRoot();

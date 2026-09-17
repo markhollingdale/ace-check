@@ -1,8 +1,6 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
-
-const logsDir = path.resolve(process.cwd(), 'logs');
-const logFile = path.join(logsDir, 'acecheck.log');
+import { logsDir } from './paths.js';
 
 export async function logScanError(
   context: string,
@@ -18,9 +16,10 @@ export async function logScanError(
     }`,
   );
   try {
-    await mkdir(logsDir, { recursive: true });
+    const dir = logsDir();
+    await mkdir(dir, { recursive: true });
     await appendFile(
-      logFile,
+      path.join(dir, 'acecheck.log'),
       `[${new Date().toISOString()}] ${context}\n${detail}\n`,
       'utf8',
     );

@@ -20,7 +20,7 @@ Read them in order before doing anything else.
 
 ---
 
-## Mode: Sequential (default — recommended)
+## Mode: Sequential (default - recommended)
 
 The full suite runs **sequentially, in the framework-defined order**. Do not parallelise unless the user explicitly asks (see below).
 
@@ -29,7 +29,7 @@ Why sequential:
 - **Earlier reports inform later reviews.** Each review's Phase 1 documentation (technology stack, project structure, environment variables, data model) is reused by later reviews instead of being re-discovered. Architecture (10) is first because it documents the foundation everything else builds on.
 - **The deduplication rule works best with shared context.** Reviews must reference existing finding IDs from earlier reports instead of duplicating them (e.g., a money-flow finding belongs in Business Logic 160, not in Testing 150's coverage notes).
 - **One shared context produces consistency**: one project name, one report style, no naming collisions, no contradictory findings.
-- **The Summary requires all 16 reports anyway** — a parallel run still needs a sequential aggregation pass at the end.
+- **The Summary requires all 16 reports anyway** - a parallel run still needs a sequential aggregation pass at the end.
 - **Parallelism multiplies cost**: N agents re-read the same codebase independently instead of reusing earlier Phase 1 docs.
 
 ---
@@ -70,7 +70,7 @@ For each review:
 1. Read the review document at `../reviews/[number]-[name]/[number]-[name].md`.
 2. Execute **Phase 1** (descriptive documentation) → write the Phase 1 report.
 3. Execute **Phase 2** (scored assessment) → write the Phase 2 report, following `20-review-framework.md` exactly.
-4. **Checkpoint** — report one line of progress: score, finding count, critical/high totals. Continue without waiting for user input unless one of the following happens:
+4. **Checkpoint** - report one line of progress: score, finding count, critical/high totals. Continue without waiting for user input unless one of the following happens:
    - The review document requires a user decision.
    - A Critical finding needs immediate confirmation (e.g., suspected active data exposure).
    - The user interrupts.
@@ -84,17 +84,17 @@ When all 16 reviews are complete:
 - Read `../reviews/999-summary/999-summary.md` and follow it.
 - Write `[project]-999-summary.md`.
 - If any review was skipped, follow the Summary's partial-run warning rules.
-- **Always include §6b Manual Runbooks & Pre-Live Gate** — if `docs/runbooks/pre-live-gate.md` is unsigned, the Summary must emit `⚠️ MANUAL GATE NOT SIGNED` and keep `Production Ready: PROVISIONAL` even if all code scores are green.
+- **Always include §6b Manual Runbooks & Pre-Live Gate** - if `docs/runbooks/pre-live-gate.md` is unsigned, the Summary must emit `⚠️ MANUAL GATE NOT SIGNED` and keep `Production Ready: PROVISIONAL` even if all code scores are green.
 
 ### 4. Offer the Specification (140)
 
-Ask the user whether to generate an implementation specification (and at which severity level). Only generate it if asked — it is optional output.
+Ask the user whether to generate an implementation specification (and at which severity level). Only generate it if asked - it is optional output.
 
 ---
 
 ## Deduplication Across the Run
 
-- If a later review surfaces an issue that an earlier finding ID already covers, **reference the existing ID** — do not create a duplicate finding.
+- If a later review surfaces an issue that an earlier finding ID already covers, **reference the existing ID** - do not create a duplicate finding.
 - When reviews have overlapping scope (e.g., Security 20 vs Business Logic 160 on the same flow; Testing 150 vs Code Quality 60 on test maintainability), place the finding in the **owning review** per that review's "Do not duplicate" rules and reference it elsewhere.
 - If a later review needs to contradict an earlier report, note the discrepancy in the Summary rather than silently rewriting the earlier report.
 
@@ -102,12 +102,12 @@ Ask the user whether to generate an implementation specification (and at which s
 
 ## If the User Asks for Parallel Execution
 
-Explain the trade-offs above, then — if the user still wants it — proceed as follows:
+Explain the trade-offs above, then - if the user still wants it - proceed as follows:
 
 - Reviews are **independent analysis tasks** and may be delegated to subagents, subject to:
   - Each subagent receives the full framework context (`20-review-framework.md`) and the exact project name + report naming convention.
   - No two subagents write the same report file (each owns its review numbers).
-  - Do not parallelise the Summary or the Specification — they depend on all reports.
+  - Do not parallelise the Summary or the Specification - they depend on all reports.
 - After all subagents finish, perform a **deduplication sweep**: read every report, find findings that duplicate each other, keep the one in the owning review, and add references to the others. Note the sweep in the Summary.
 - The Summary (999) must wait until every report exists.
 

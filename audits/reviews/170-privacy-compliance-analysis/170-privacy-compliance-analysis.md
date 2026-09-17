@@ -38,7 +38,7 @@ Do not assess quality yet.
 
 Document:
 
-- Every category of personal data collected (identity, contact, location, financial, biometric, device, behavioural) — **including UGC content bodies** if users can write reviews/listings (free-text often contains inadvertent PII)
+- Every category of personal data collected (identity, contact, location, financial, biometric, device, behavioural) - **including UGC content bodies** if users can write reviews/listings (free-text often contains inadvertent PII)
 - Where each category is stored (database tables, object storage, logs, backups, caches, search indexes)
 - Data collected from users directly vs derived vs received from third parties
 - Children's data considerations (COPPA/KYCC or equivalent, if relevant)
@@ -203,11 +203,11 @@ Review:
 
 ---
 
-# Retention & Deletion — Including UGC Cascade
+# Retention & Deletion - Including UGC Cascade
 
 Review:
 
-- Does any retention schedule exist, and is it enforced by a job/cron (not just documented)? Cross-ref Database 40 and Production 100 — retention without a job is not retention.
+- Does any retention schedule exist, and is it enforced by a job/cron (not just documented)? Cross-ref Database 40 and Production 100 - retention without a job is not retention.
 - Are deleted accounts' PII removed from backups/logs within a reasonable window?
 - Does deletion cascade to related records (profiles, media, messages, **reviews/listings + search index + caches**, derived data)?
 - Are there orphaned PII records with no deletion path (e.g., unverified sign-ups, pending moderation queue)?
@@ -242,7 +242,7 @@ Review:
 - Every subprocessor identified and covered by terms
 - Analytics sending PII unnecessarily
 - Payment data handled by PCI-compliant providers (cross-reference: Security Review 20)
-- AI providers receiving data — what data, for how long, for what purpose (training?)
+- AI providers receiving data - what data, for how long, for what purpose (training?)
 
 ---
 
@@ -275,7 +275,7 @@ Where practical, map findings to:
 - GDPR (lawful basis, data subject rights, retention, transfer)
 - CCPA/CPRA (disclosure, deletion, sale/sharing opt-out)
 - ePrivacy (cookies and tracking)
-- PCI DSS (payment data — cross-reference Security Review 20)
+- PCI DSS (payment data - cross-reference Security Review 20)
 
 State clearly that this is an engineering assessment, not legal advice, and note where counsel is needed.
 

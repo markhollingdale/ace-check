@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Finding } from '../../types.js';
+import { targetStateDir } from '../../paths.js';
 
 export function findingsMarkdown(findings: Finding[]): string {
   const counts: Record<string, number> = {
@@ -40,7 +41,7 @@ export async function writeChecksReport(
   codebasePath: string,
   findings: Finding[],
 ): Promise<{ jsonPath: string; markdownPath: string }> {
-  const dir = path.join(codebasePath, '.acecheck');
+  const dir = targetStateDir(codebasePath);
   await mkdir(dir, { recursive: true });
   const jsonPath = path.join(dir, 'checks.json');
   const markdownPath = path.join(dir, 'checks.md');

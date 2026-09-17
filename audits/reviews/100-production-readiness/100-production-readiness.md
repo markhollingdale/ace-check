@@ -108,9 +108,9 @@ Document:
 
 Document:
 
-- Backup strategy (provider PITR window — Neon 7d, Supabase PITR, logical dumps)
+- Backup strategy (provider PITR window - Neon 7d, Supabase PITR, logical dumps)
 - Recovery procedures (step-by-step runbook, not "contact support")
-- **Last successful restore drill date + artifact** (branch-from-backup or point-in-time restored to staging, queries verified) — if no date, state `NEVER TESTED`
+- **Last successful restore drill date + artifact** (branch-from-backup or point-in-time restored to staging, queries verified) - if no date, state `NEVER TESTED`
 - RTO / RPO targets vs measured drill time
 - Disaster recovery (region failure, data-loss scenario)
 - Data retention (backups vs logs vs caches)
@@ -136,7 +136,7 @@ Explain operational dependencies.
 Document:
 
 - Maintenance procedures
-- Operational runbooks (`docs/runbooks/*` — especially `pre-live-gate.md` and `vercel-neon-manual-setup.md`)
+- Operational runbooks (`docs/runbooks/*` - especially `pre-live-gate.md` and `vercel-neon-manual-setup.md`)
 - Incident handling (on-call, toggle owners for Attack Challenge Mode / feature kill-switch)
 - Release process (rollback, feature-flag kill-switch, progressive rollout if used)
 - Synthetic smoke: `login → create → search → view` canary that runs post-deploy (URL + schedule)
@@ -156,13 +156,13 @@ Document:
 
 ## 11. Platform Firewall, Bot & Spend Controls
 
-Document (conditional — only if the platform is used):
+Document (conditional - only if the platform is used):
 
-- If Vercel: Firewall state — Bot Management ON/OFF, custom rate rules (e.g., 100 req/min on `/api/trpc` or `/api/*`), Managed Challenge vs Block action, Attack Challenge Mode familiarity
+- If Vercel: Firewall state - Bot Management ON/OFF, custom rate rules (e.g., 100 req/min on `/api/trpc` or `/api/*`), Managed Challenge vs Block action, Attack Challenge Mode familiarity
 - If Cloudflare / other CDN: equivalent bot/WAF rules
 - Spend controls: Vercel Billing → Spend Management alerts at 50/75/100%, Spend Limits / Pause project; Neon/Supabase plan limits, compute auto-suspend, `max_connections` / pool config
 - `vercel.json` headers, `next.config.ts` headers, `middleware.ts` existence and runtime (`edge` vs `nodejs`)
-- `app/robots.ts` vs `public/robots.txt` — which will ship
+- `app/robots.ts` vs `public/robots.txt` - which will ship
 - `app/sitemap.ts` / `public/sitemap.xml` hygiene
 
 ---
@@ -282,17 +282,17 @@ Assess reliability of asynchronous processing.
 
 ---
 
-# Backup & Disaster Recovery — Proof Required
+# Backup & Disaster Recovery - Proof Required
 
 Review:
 
-- Backup procedures (PITR window matches provider — Neon/Supabase 7d+)
+- Backup procedures (PITR window matches provider - Neon/Supabase 7d+)
 - Recovery procedures (runbook exists and is not "contact support")
 - **Restore testing: is there evidence of a restore?** Demand date + artifact: a branch restored from backup to staging with `SELECT COUNT(*) > 0` or equivalent. `Backup ON` with `last drill = NEVER` = **High** (Critical if no PITR at all).
 - RTO/RPO: targets vs drill-measured time; is RPO < 1h?
-- Data retention (backups vs logs — are logs retaining PII longer than DB?)
+- Data retention (backups vs logs - are logs retaining PII longer than DB?)
 
-Evaluate disaster recovery readiness. If provider says "PITR enabled" but team never restored, flag — that is untested, not ready.
+Evaluate disaster recovery readiness. If provider says "PITR enabled" but team never restored, flag - that is untested, not ready.
 
 Cross-reference: Database owns schema retention, Testing owns drill automation, you own "can we prove we restored?"
 
@@ -327,21 +327,21 @@ Evaluate readiness for increased demand.
 
 ---
 
-# Operational Readiness — Including Kill-Switch & Runbook Drill
+# Operational Readiness - Including Kill-Switch & Runbook Drill
 
 Review:
 
 - Runbooks (does `docs/runbooks/pre-live-gate.md` exist and is it the single pre-launch checklist? does `vercel-neon-manual-setup.md` match dashboard state?)
-- Incident response (who is on-call, who toggles Attack Challenge Mode / feature flag off at 2am, who restores DB — names, not roles)
+- Incident response (who is on-call, who toggles Attack Challenge Mode / feature flag off at 2am, who restores DB - names, not roles)
 - Maintenance procedures
-- Release process (feature flags / progressive rollout / immediate kill-switch if no flags — can you shed load without a redeploy?)
+- Release process (feature flags / progressive rollout / immediate kill-switch if no flags - can you shed load without a redeploy?)
 - Operational documentation (RTO/RPO, contacts, escalation)
 
-Determine whether the application can be effectively supported in production. If the only rollback is `git revert + redeploy (8 min)` and the spike is 100 req/s, flag as **High** — you need a flag or Challenge toggle that works in seconds.
+Determine whether the application can be effectively supported in production. If the only rollback is `git revert + redeploy (8 min)` and the spike is 100 req/s, flag as **High** - you need a flag or Challenge toggle that works in seconds.
 
 ---
 
-# Testing Readiness — Including Synthetic Smoke
+# Testing Readiness - Including Synthetic Smoke
 
 Review:
 
@@ -357,12 +357,12 @@ Reference Testing review for implementation, but flag missing gate here as opera
 
 ---
 
-# Observability — Including SLOs & Human vs Bot Split
+# Observability - Including SLOs & Human vs Bot Split
 
 Review:
 
-- Metrics + **SLIs/SLOs**: p95 latency, error rate, and burn rate — is there an SLO and an alert when it burns? No SLO = no shared definition of "down".
-- Logs (including PII hygiene — cross-ref Privacy)
+- Metrics + **SLIs/SLOs**: p95 latency, error rate, and burn rate - is there an SLO and an alert when it burns? No SLO = no shared definition of "down".
+- Logs (including PII hygiene - cross-ref Privacy)
 - Traces
 - Dashboards
 - Alerting (who gets paged, not just emailed)
@@ -388,22 +388,22 @@ Identify risks to business continuity.
 
 ---
 
-# Platform Firewall & Spend Safeguards — Pre-Launch Click Checklist (Manual, Not Code)
+# Platform Firewall & Spend Safeguards - Pre-Launch Click Checklist (Manual, Not Code)
 
-You must verify these in the **Vercel / Neon / Supabase dashboards** — code review alone cannot prove they are ON.
+You must verify these in the **Vercel / Neon / Supabase dashboards** - code review alone cannot prove they are ON.
 
 **If Vercel is used, verify:**
 
-- [ ] Project → Settings → Security / Firewall → **Bot Management** ON (Managed Challenge for unverified bots — catches spoofed GPTBot)
+- [ ] Project → Settings → Security / Firewall → **Bot Management** ON (Managed Challenge for unverified bots - catches spoofed GPTBot)
 - [ ] Firewall → Custom Rules → **Rate limit**: `if path startsWith /api/trpc then rate limit 100 req/min per IP` (or 60/min on expensive search), action `Challenge` or `Block` with `429`
-- [ ] Know where **Attack Challenge Mode** is (Firewall tab — single toggle to challenge all traffic during a spike). Document who can toggle and drill it once.
+- [ ] Know where **Attack Challenge Mode** is (Firewall tab - single toggle to challenge all traffic during a spike). Document who can toggle and drill it once.
 - [ ] Billing → Spend Management → **Spend Alerts** at `50%`, `75%`, `100%` of budget; **Spend Limits / Pause project** if tier supports it
-- [ ] `middleware.ts` (if present) uses `edge` runtime and is <50 lines — verify it does UA block before DB, not after
+- [ ] `middleware.ts` (if present) uses `edge` runtime and is <50 lines - verify it does UA block before DB, not after
 - [ ] `vercel.json` / `next.config.ts` security + cache headers are shipped (inspect deployment → Headers tab)
 
 **If Neon is used, verify:**
 
-- [ ] Project → Settings → Compute → **Auto-suspend** tuned, `max_connections` and PgBouncer (pooled connection string) in use — not direct `postgres://` per Serverless invocation
+- [ ] Project → Settings → Compute → **Auto-suspend** tuned, `max_connections` and PgBouncer (pooled connection string) in use - not direct `postgres://` per Serverless invocation
 - [ ] Branching / PITR enabled for recovery (reference Backups)
 - [ ] Billing alerts ON
 
@@ -413,7 +413,7 @@ You must verify these in the **Vercel / Neon / Supabase dashboards** — code re
 - [ ] Auth → Rate limits reviewed
 - [ ] Billing alerts ON
 
-Reference docs: `../runbooks/vercel-neon-manual-setup.md` (add to repo) or link to Vercel/Neon docs. Flag any unchecked item as **High** — it costs real money from day one.
+Reference docs: `../runbooks/vercel-neon-manual-setup.md` (add to repo) or link to Vercel/Neon docs. Flag any unchecked item as **High** - it costs real money from day one.
 
 Dedup: Security owns "is rate limit correct in code?", Performance owns "is it cached?", you own "is the platform switch actually ON?"
 
@@ -457,19 +457,19 @@ For example:
 
 Reference the appropriate review instead.
 
-**Mandatory manual-verification finding — you must always emit this:**
+**Mandatory manual-verification finding - you must always emit this:**
 
 Even if all code checks pass, you **must** create at least one finding that surfaces the dashboard runbooks, because code review cannot prove they are ON. Use this template (High; upgrade to Critical if no evidence of any manual check):
 
 ```
-## PRD-MANUAL-001 — Manual Dashboard & Pre-Live Gate Verification Required
+## PRD-MANUAL-001 - Manual Dashboard & Pre-Live Gate Verification Required
 
 Severity: High
 Problem: The following platform controls cannot be verified from code and require human confirmation before `PRODUCTION READY: YES`: Vercel Bot Management, Firewall rate rule on /api/trpc, Attack Challenge Mode owner, Spend Alerts 50/75/100%, Neon/Supabase pooled URL + PITR + restore drill date, synthetic smoke. See docs/runbooks/vercel-neon-manual-setup.md and docs/runbooks/pre-live-gate.md.
 
 Recommendation: Walk docs/runbooks/pre-live-gate.md gate checklist (sections 1-4) and paste curl outputs + drill dates into this report's Phase 1 doc. Do not mark production ready until signed.
 
-Cross-reference: Security owns limiter correctness, Performance owns cache, Cost owns spend model — you own proof the switch is ON.
+Cross-reference: Security owns limiter correctness, Performance owns cache, Cost owns spend model - you own proof the switch is ON.
 ```
 
 If `docs/runbooks/pre-live-gate.md` is not present in the repo or has no sign-off date, state that explicitly in the finding.

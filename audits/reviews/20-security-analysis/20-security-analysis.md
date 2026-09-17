@@ -177,14 +177,14 @@ Document:
 
 ## 11. Abuse, Bot & Crawler Surface
 
-Document (project-agnostic — use "if applicable"):
+Document (project-agnostic - use "if applicable"):
 
-- Every public/unauthenticated endpoint and procedure (if tRPC: every `publicProcedure`; if REST: every `GET` without auth) — list name, cost (DB queries, PostGIS, external calls), and current rate limiter if any
+- Every public/unauthenticated endpoint and procedure (if tRPC: every `publicProcedure`; if REST: every `GET` without auth) - list name, cost (DB queries, PostGIS, external calls), and current rate limiter if any
 - Rate-limit implementation: where enforced (middleware, procedure wrapper, route handler), store (DB table, Upstash Redis, in-memory), window/quotas, key (IP, IP+UA, userId, fingerprint), atomicity
 - Bot/crawler controls: `robots.txt` / `app/robots.ts` rules per User-Agent, sitemap hygiene, middleware UA blocking, canonical/noindex for filter/pagination permutations
 - Spam controls: CAPTCHA/ALTCHA coverage, honeypot, email verification, registration throttling
 - Engagement/analytics abuse: how views/clicks/counts are deduped (IP+UA, fingerprint), whether crawler UAs are filtered
-- Platform controls (if Vercel/Cloudflare used): Bot Management, Firewall custom rules, Attack Challenge Mode, Spend Alerts — document configured state
+- Platform controls (if Vercel/Cloudflare used): Bot Management, Firewall custom rules, Attack Challenge Mode, Spend Alerts - document configured state
 
 ---
 
@@ -428,9 +428,9 @@ Attempt to identify abuse scenarios.
 
 ---
 
-# Abuse & Cost Amplification — Bot, Crawler & Spam (Primary Owner)
+# Abuse & Cost Amplification - Bot, Crawler & Spam (Primary Owner)
 
-You own abuse detection. Cross-reference but do not duplicate: Performance owns edge-cache absorption, SEO owns robots/canonical correctness, Cost owns dollar modelling — you own "can it be abused?" and "is it rate-limited?".
+You own abuse detection. Cross-reference but do not duplicate: Performance owns edge-cache absorption, SEO owns robots/canonical correctness, Cost owns dollar modelling - you own "can it be abused?" and "is it rate-limited?".
 
 ## A. Bot & Crawler Abuse (Critical for Vercel/Serverless Apps)
 
@@ -439,9 +439,9 @@ Assume 100k+ requests in hours from GPTBot, ClaudeBot, Bytespider, CCBot, Perple
 Review:
 
 - **Infinite URL spaces / crawl traps:** Faceted search (`/whats-on?q=&where=&category=&sort=&dateFrom=&radius=&priceMax=`), pagination `?page=`, sort/filter combos. Every permutation must not be crawlable as a distinct expensive page. Check `robots.ts` / `robots.txt`, canonical collapsing, `noindex` on filtered variants (reference SEO review for correctness, flag here as abuse surface).
-- **Unauthenticated read abuse:** Inventory every public read/search proc. If any expensive query (PostGIS `ST_DWithin`, full-text, aggregation) is reachable without auth and without a limiter, it is a P0. Examples: `search.search`, `venue.search`, `event.list/getBySlug/getById/getUpcoming`, `category.list`, `ad.getForPosition`, `favorite.count` — verify each has an atomic sliding-window limit (DB or Upstash Redis). In-memory only = bypassed by horizontal scale.
+- **Unauthenticated read abuse:** Inventory every public read/search proc. If any expensive query (PostGIS `ST_DWithin`, full-text, aggregation) is reachable without auth and without a limiter, it is a P0. Examples: `search.search`, `venue.search`, `event.list/getBySlug/getById/getUpcoming`, `category.list`, `ad.getForPosition`, `favorite.count` - verify each has an atomic sliding-window limit (DB or Upstash Redis). In-memory only = bypassed by horizontal scale.
 - **Cache-bypass abuse:** If `app/api/trpc/[trpc]/route.ts` sets `Cache-Control: no-store` on all responses, or detail pages have no `export const revalidate` / `export const dynamic = "force-static"` / ISR, every bot hit = DB render. Flag as cost-amplification even though Performance owns the fix.
-- **Edge middleware second line:** If Next.js middleware exists, verify a tiny UA filter for known AI bots at the edge catches spoofed scrapers (keep tiny — runs on every request). No middleware = note as missing layer.
+- **Edge middleware second line:** If Next.js middleware exists, verify a tiny UA filter for known AI bots at the edge catches spoofed scrapers (keep tiny - runs on every request). No middleware = note as missing layer.
 - **Engagement inflation:** If views/impressions are counted client-side and keyed only by `IP+UA`, bots running JS inflate counts and can be used to game ranking. Flag if crawler UAs are not ignored in `lib/engagement.ts` or equivalent.
 - **Spoofed UA:** Malicious scrapers spoof `GPTBot` to sneak past naive rules. Verify platform Firewall does ASN verification (if Vercel Bot Management) or that middleware blocks UA regardless of spoof.
 
@@ -450,22 +450,22 @@ Review:
 Review:
 
 - Registration / contact / claim / upload / report forms: is ALTCHA (or equivalent) enforced server-side on every write? Client-only check = bypass.
-- Email abuse: can an attacker trigger unlimited transactional emails (verification, reset, notifications) per IP? Is there per-IP + per-target rate limit? Is SPF/DKIM/DMARC passing (deliverability check — cross-ref `pre-live-gate.md`)?
+- Email abuse: can an attacker trigger unlimited transactional emails (verification, reset, notifications) per IP? Is there per-IP + per-target rate limit? Is SPF/DKIM/DMARC passing (deliverability check - cross-ref `pre-live-gate.md`)?
 - Content spam: can an unauthenticated actor create listings, reviews, comments at scale? Check throttling + moderation.
 - Honeypot / fingerprinting (if used): document secondary signals.
 
-### If UGC Is Present (reviews, comments, listings, profiles) — Conditional
+### If UGC Is Present (reviews, comments, listings, profiles) - Conditional
 
 If the app accepts user-generated content (as this review library does), also review:
 
 - **Moderation queue:** Is every new/edited UGC item `pending` until moderated or auto-scanned? No queue = spam is live instantly.
 - **Report → triage SLA:** Can any user `report` content and is there an admin view + action (hide/delete + notify author) with audit logging? Missing report path = no takedown.
-- **Automated filters:** profanity/NSFW/URL spam heuristic or vendor (e.g., Perspective, regex) — not as sole gate, but as flag for queue.
+- **Automated filters:** profanity/NSFW/URL spam heuristic or vendor (e.g., Perspective, regex) - not as sole gate, but as flag for queue.
 - **Review bombing / throttling:** Can one IP/user create 50 reviews/hr across targets? Require per-user + per-target rate limit distinct from generic API limit.
 - **Admin abuse:** Can a moderator edit/delete any content without audit trail? Verify `updatedBy` + `deletedAt` + `audit_log` and that moderator actions are not client-authorizable.
 - **Escalation & blocking:** Can admins block user + hide all their UGC in one action; is there an appeal path?
 
-Cross-ref Privacy 170 for UGC retention/deletion and Business Logic 160 for workflow correctness — you own "can it be spammed or abused by a moderator/bot?"
+Cross-ref Privacy 170 for UGC retention/deletion and Business Logic 160 for workflow correctness - you own "can it be spammed or abused by a moderator/bot?"
 
 ## C. Rate-Limit Completeness Audit
 
@@ -476,9 +476,9 @@ For **every** write surface already checked (tracking, auth, claims, uploads, re
 - Limits are differentiated: cheap reads > expensive search > writes > auth. Flat `60/min` on all routes = search still abusable.
 - Fail-open vs fail-closed is intentional: DB-backed limiter failing open under DB load = protection disappears during the storm it's meant to stop.
 
-Estimate financial impact: `requests * (Serverless GB-s + DB compute + external calls)` — reference Cost Analysis for dollar figure, but state req/s needed to 10x bill.
+Estimate financial impact: `requests * (Serverless GB-s + DB compute + external calls)` - reference Cost Analysis for dollar figure, but state req/s needed to 10x bill.
 
-Test manually: `curl -A GPTBot`, `curl -A "Mozilla (spoofed GPTBot)`, burst 60/min on cheapest search endpoint with `x-forwarded-for` rotation — expect `429` with `Retry-After`.
+Test manually: `curl -A GPTBot`, `curl -A "Mozilla (spoofed GPTBot)`, burst 60/min on cheapest search endpoint with `x-forwarded-for` rotation - expect `429` with `Retry-After`.
 
 ---
 

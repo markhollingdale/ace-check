@@ -1,10 +1,17 @@
 node_modules/
 dist/
 web/dist/
+
+# Generated data lives outside the repo (see src/paths.ts): scans, projects and
+# logs are written to the per-user app-data directory. These entries remain only
+# as a safety net for anyone overriding ACECHECK_DATA_DIR into the repo.
 scans/
+projects/
 logs/
 .acecheck/
+
 .kilo/
+docs/plans/
 *.log
 .DS_Store
 .env

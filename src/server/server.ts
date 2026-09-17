@@ -49,10 +49,43 @@ import { buildRelease } from '../audit/release.js';
 import { logScanError } from '../log.js';
 import { AUDIT_PROFILES, profileById } from '../audit/profiles.js';
 import {
+  isResolved,
   readFindingStatuses,
   setFindingStatus,
 } from '../audit/lifecycle.js';
 import { aiConfigFromEnv, runAiReview } from '../audit/ai-runner.js';
+import type {
+  Project,
+  Run,
+  ScannerDescriptor,
+  StageId,
+  StageProgress,
+} from '../types.js';
+import {
+  deleteProject,
+  deleteRun,
+  latestRun,
+  listProjects,
+  listRuns,
+  newProjectId,
+  readProject,
+  readRun,
+  readRunFindings,
+  readRunReport,
+  writeProject,
+  writeRun,
+} from '../storage/projects.js';
+import {
+  executeRun,
+  executeSingleStage,
+  planRun,
+  projectStagePlan,
+} from '../audit/stages/runner.js';
+import { RUN_PROFILES, runProfileById } from '../audit/stages/catalog.js';
+import { listScannerDescriptors } from '../audit/scanners/registry.js';
+import { buildReleaseGate } from '../audit/gate.js';
+import { buildNextActions } from '../audit/next-actions.js';
+import { dataPaths } from '../paths.js';
 
 interface ScanState {
   cancelled: boolean;
@@ -75,6 +108,14 @@ app.get('/api/config/presets', (c) =>
     defaults: defaultConfig(),
   }),
 );
+
+app.get('/api/config/paths', (c) => {
+  const paths = dataPaths();
+  return c.json({
+    ...paths,
+    overrideEnv: process.env.ACECHECK_DATA_DIR || null,
+  });
+});
 
 function listDrives(): string[] {
   const drives: string[] = [];
@@ -145,6 +186,345 @@ app.post('/api/checks', async (c) => {
   const findings = await runCodeChecks(codebasePath);
   const report = await writeChecksReport(codebasePath, findings);
   return c.json({ findings, report });
+});
+
+// Scanners & run profiles ---------------------------------------------
+
+app.get('/api/scanners', async (c) => {
+  const force = c.req.query('refresh') === '1';
+  return c.json({ scanners: await listScannerDescriptors(force) });
+});
+
+app.get('/api/run-profiles', (c) => c.json({ profiles: RUN_PROFILES }));
+
+// Projects -------------------------------------------------------------
+
+interface RunningRun {
+  cancelled: boolean;
+  progress: StageProgress | null;
+  running: boolean;
+}
+
+const runningRuns = new Map<string, RunningRun>();
+
+function runKey(projectId: string, runId: string): string {
+  return `${projectId}/${runId}`;
+}
+
+function hostsFromUrls(...urls: (string | undefined)[]): string[] {
+  const hosts = new Set<string>();
+  for (const url of urls) {
+    if (!url) continue;
+    try {
+      hosts.add(new URL(url).hostname);
+    } catch {
+      /* ignore invalid url */
+    }
+  }
+  return [...hosts];
+}
+
+async function activeFindings(project: Project, runId: string | undefined) {
+  if (!runId) return [];
+  const findings = await readRunFindings(project.id, runId);
+  const statuses = project.targets.codebasePath
+    ? readFindingStatuses(project.targets.codebasePath)
+    : {};
+  return findings
+    .map((f) => ({ ...f, status: statuses[f.id] ?? f.status }))
+    .filter((f) => !isResolved(f.status));
+}
+
+async function projectSnapshot(project: Project) {
+  const run = await latestRun(project.id);
+  const stages = projectStagePlan(project, run);
+  const findings = await activeFindings(project, run?.id);
+  const gate = run ? buildReleaseGate(findings) : null;
+  return {
+    project,
+    run,
+    stages,
+    findings,
+    gate,
+    nextActions: buildNextActions(findings),
+  };
+}
+
+app.get('/api/projects', async (c) => {
+  const projects = await listProjects();
+  const enriched = await Promise.all(
+    projects.map(async (project) => {
+      const run = await latestRun(project.id);
+      const findings = await activeFindings(project, run?.id);
+      const gate = run ? buildReleaseGate(findings) : null;
+      return {
+        project,
+        run,
+        gate,
+        findings: findings.length,
+        openCritical: findings.filter((f) => f.severity === 'critical').length,
+      };
+    }),
+  );
+  return c.json({ projects: enriched });
+});
+
+app.post('/api/projects', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const name = typeof body?.name === 'string' ? body.name.trim() : '';
+  const productionUrl =
+    typeof body?.productionUrl === 'string' ? body.productionUrl.trim() : '';
+  const stagingUrl =
+    typeof body?.stagingUrl === 'string' ? body.stagingUrl.trim() : '';
+  const codebasePath =
+    typeof body?.codebasePath === 'string' ? body.codebasePath.trim() : '';
+  if (!name) return c.json({ error: 'Please provide a project name.' }, 400);
+  if (!productionUrl && !codebasePath) {
+    return c.json(
+      { error: 'Please provide a website URL, a codebase path, or both.' },
+      400,
+    );
+  }
+  const allowedHosts = Array.isArray(body?.allowedHosts)
+    ? (body.allowedHosts as string[]).filter((h) => typeof h === 'string')
+    : hostsFromUrls(stagingUrl, productionUrl);
+
+  const project: Project = {
+    id: newProjectId(name),
+    name,
+    createdAt: new Date().toISOString(),
+    targets: {
+      productionUrl: productionUrl || undefined,
+      stagingUrl: stagingUrl || undefined,
+      codebasePath: codebasePath || undefined,
+    },
+    profileId: typeof body?.profileId === 'string' ? body.profileId : 'standard',
+    allowedHosts,
+    authorised: Boolean(body?.authorised),
+    reportImports:
+      typeof body?.reportImports === 'object' && body.reportImports
+        ? {
+            playwright: body.reportImports.playwright || undefined,
+            burp: body.reportImports.burp || undefined,
+          }
+        : undefined,
+  };
+  await writeProject(project);
+  return c.json({ project });
+});
+
+app.get('/api/projects/:id', async (c) => {
+  const project = await readProject(c.req.param('id'));
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  return c.json(await projectSnapshot(project));
+});
+
+app.patch('/api/projects/:id', async (c) => {
+  const project = await readProject(c.req.param('id'));
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const body = await c.req.json().catch(() => ({}));
+
+  if (typeof body?.name === 'string' && body.name.trim()) {
+    project.name = body.name.trim();
+  }
+  if (body?.targets && typeof body.targets === 'object') {
+    project.targets = {
+      productionUrl:
+        body.targets.productionUrl !== undefined
+          ? body.targets.productionUrl || undefined
+          : project.targets.productionUrl,
+      stagingUrl:
+        body.targets.stagingUrl !== undefined
+          ? body.targets.stagingUrl || undefined
+          : project.targets.stagingUrl,
+      codebasePath:
+        body.targets.codebasePath !== undefined
+          ? body.targets.codebasePath || undefined
+          : project.targets.codebasePath,
+    };
+  }
+  if (typeof body?.profileId === 'string') project.profileId = body.profileId;
+  if (typeof body?.authorised === 'boolean') project.authorised = body.authorised;
+  if (Array.isArray(body?.allowedHosts)) {
+    project.allowedHosts = body.allowedHosts.filter(
+      (h: unknown): h is string => typeof h === 'string',
+    );
+  } else {
+    project.allowedHosts = hostsFromUrls(
+      project.targets.stagingUrl,
+      project.targets.productionUrl,
+      ...project.allowedHosts,
+    );
+  }
+  if (body?.reportImports && typeof body.reportImports === 'object') {
+    project.reportImports = {
+      playwright: body.reportImports.playwright || undefined,
+      burp: body.reportImports.burp || undefined,
+    };
+  }
+  await writeProject(project);
+  return c.json(await projectSnapshot(project));
+});
+
+app.delete('/api/projects/:id', async (c) => {
+  await deleteProject(c.req.param('id'));
+  return c.json({ ok: true });
+});
+
+// Runs -----------------------------------------------------------------
+
+app.get('/api/projects/:id/runs', async (c) => {
+  const projectId = c.req.param('id');
+  const project = await readProject(projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  return c.json({ runs: await listRuns(projectId) });
+});
+
+app.post('/api/projects/:id/runs', async (c) => {
+  const projectId = c.req.param('id');
+  const project = await readProject(projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const profileId =
+    typeof body?.profileId === 'string' ? body.profileId : project.profileId;
+  const stagesOverride = Array.isArray(body?.stages)
+    ? (body.stages as StageId[])
+    : undefined;
+
+  const run = planRun(project, profileId, stagesOverride);
+  const state: RunningRun = { cancelled: false, progress: null, running: true };
+  runningRuns.set(runKey(projectId, run.id), state);
+  await writeRun(run);
+
+  executeRun(project, run, {
+    onProgress: (p) => {
+      state.progress = p;
+    },
+    shouldCancel: () => state.cancelled,
+  })
+    .catch((err) => {
+      run.status = 'failed';
+      void writeRun(run);
+      void logScanError(`run ${projectId}/${run.id} failed`, err);
+    })
+    .finally(() => {
+      state.running = false;
+    });
+
+  return c.json({ run });
+});
+
+app.get('/api/projects/:id/runs/:runId', async (c) => {
+  const projectId = c.req.param('id');
+  const run = await readRun(projectId, c.req.param('runId'));
+  if (!run) return c.json({ error: 'Run not found' }, 404);
+  const findings = await readRunFindings(projectId, run.id);
+  const project = await readProject(projectId);
+  const statuses = project?.targets.codebasePath
+    ? readFindingStatuses(project.targets.codebasePath)
+    : {};
+  const withStatus = findings.map((f) => ({
+    ...f,
+    status: statuses[f.id] ?? f.status,
+  }));
+  const active = withStatus.filter((f) => !isResolved(f.status));
+  return c.json({
+    run,
+    findings: active,
+    gate: buildReleaseGate(active),
+    nextActions: buildNextActions(active),
+  });
+});
+
+app.get('/api/projects/:id/runs/:runId/progress', async (c) => {
+  const projectId = c.req.param('id');
+  const runId = c.req.param('runId');
+  const state = runningRuns.get(runKey(projectId, runId));
+  if (state?.progress) return c.json({ progress: state.progress });
+  const run = await readRun(projectId, runId);
+  if (!run) return c.json({ error: 'Run not found' }, 404);
+  return c.json({
+    progress: {
+      projectId,
+      runId,
+      stageId: run.stages[run.stages.length - 1]?.id ?? 'verdict',
+      status: run.status,
+      stageStatus: run.stages[run.stages.length - 1]?.status ?? 'ready',
+      message: run.status === 'done' ? 'Run complete' : `Run ${run.status}`,
+      findings: run.stages.reduce((n, s) => n + s.findings, 0),
+      stages: run.stages,
+    } satisfies StageProgress,
+  });
+});
+
+app.post('/api/projects/:id/runs/:runId/cancel', async (c) => {
+  const key = runKey(c.req.param('id'), c.req.param('runId'));
+  const state = runningRuns.get(key);
+  if (!state?.running) return c.json({ error: 'Run is not running' }, 400);
+  state.cancelled = true;
+  return c.json({ ok: true });
+});
+
+app.post('/api/projects/:id/runs/:runId/stages/:stageId/run', async (c) => {
+  const projectId = c.req.param('id');
+  const runId = c.req.param('runId');
+  const stageId = c.req.param('stageId') as StageId;
+  const project = await readProject(projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const run = await readRun(projectId, runId);
+  if (!run) return c.json({ error: 'Run not found' }, 404);
+
+  const key = runKey(projectId, runId);
+  const state: RunningRun = { cancelled: false, progress: null, running: true };
+  runningRuns.set(key, state);
+
+  executeSingleStage(project, run, stageId, {
+    onProgress: (p) => {
+      state.progress = p;
+    },
+    shouldCancel: () => state.cancelled,
+  })
+    .catch((err) =>
+      logScanError(`stage ${stageId} on ${projectId}/${runId} failed`, err),
+    )
+    .finally(() => {
+      state.running = false;
+    });
+
+  return c.json({ ok: true });
+});
+
+app.get('/api/projects/:id/runs/:runId/report', async (c) => {
+  const format = c.req.query('format') === 'ai' ? 'ai' : 'human';
+  const file = format === 'ai' ? 'release-ai.md' : 'release.md';
+  const content = await readRunReport(
+    c.req.param('id'),
+    c.req.param('runId'),
+    file,
+  );
+  if (content == null) return c.json({ error: 'No report for this run' }, 404);
+  c.header('Content-Type', 'text/markdown; charset=utf-8');
+  return c.text(content);
+});
+
+app.delete('/api/projects/:id/runs/:runId', async (c) => {
+  await deleteRun(c.req.param('id'), c.req.param('runId'));
+  return c.json({ ok: true });
+});
+
+app.get('/api/projects/:id/findings', async (c) => {
+  const project = await readProject(c.req.param('id'));
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const run = await latestRun(project.id);
+  return c.json({ findings: await activeFindings(project, run?.id), run });
+});
+
+app.get('/api/projects/:id/next-actions', async (c) => {
+  const project = await readProject(c.req.param('id'));
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const run = await latestRun(project.id);
+  const findings = await activeFindings(project, run?.id);
+  return c.json({ nextActions: buildNextActions(findings) });
 });
 
 // AI reviews -----------------------------------------------------------
@@ -661,6 +1041,7 @@ const PORT = Number(process.env.PORT || 3210);
 export function startServer(port = PORT): void {
   serve({ fetch: app.fetch, port }, (info) => {
     console.log(`acecheck server running at http://localhost:${info.port}`);
+    console.log(`acecheck data directory: ${dataPaths().root}`);
   });
 }
 

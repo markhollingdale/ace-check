@@ -102,7 +102,7 @@ export async function runConfigAudit(codebasePath: string): Promise<Finding[]> {
         severity: 'info',
         title: 'ESLint disable comments present',
         description: `${eslintDisableCount} eslint-disable comment(s).`,
-        evidence: { file: '—', proof: 'confirmed' },
+        evidence: { file: '-', proof: 'confirmed' },
         recommendation: 'Review and justify each disabled rule.',
       }),
     );

@@ -131,10 +131,10 @@ Document:
 
 ## 7b. Backups, PITR & Restore Proof
 
-Document (cross-ref Production Readiness 100 for operational drill — you own the data-plane facts):
+Document (cross-ref Production Readiness 100 for operational drill - you own the data-plane facts):
 
 - Provider and PITR window (Neon/Supabase: PITR retention days, branch-from-restore capability, logical dump schedule if any)
-- Last successful restore drill: date, target (branch / staging clone), verification queries run — or `NEVER`
+- Last successful restore drill: date, target (branch / staging clone), verification queries run - or `NEVER`
 - RTO/RPO as configured vs measured
 
 ---
@@ -155,7 +155,7 @@ Document:
 Document:
 
 - Record creation / updates
-- Soft deletes vs hard deletes (which tables are soft, hard, or never-delete — and why)
+- Soft deletes vs hard deletes (which tables are soft, hard, or never-delete - and why)
 - Archiving
 - Retention schedules per category + enforcement job/cron (or absence)
 - Hard-coded or seed PII in dev data that must be scrubbed before prod

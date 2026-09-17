@@ -20,7 +20,7 @@ Authentication / Client-side redirect
 
 ## Problem
 
-\`app/(auth)/auth/signin/_components/signin-form.tsx\` reads \`callbackURL\` and calls \`router.push(callbackUrl)\` — line 238. No validation.
+\`app/(auth)/auth/signin/_components/signin-form.tsx\` reads \`callbackURL\` and calls \`router.push(callbackUrl)\` - line 238. No validation.
 
 ## Why It Matters
 

@@ -354,7 +354,7 @@ Issues significantly slowing current development.
 
 ### Near-Term
 
-Issues likely to impact development within the next 6–12 months.
+Issues likely to impact development within the next 6-12 months.
 
 ### Strategic
 

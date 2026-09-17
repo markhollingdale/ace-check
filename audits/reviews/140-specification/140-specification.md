@@ -246,7 +246,7 @@ For each phase (1-16), create a section following this template:
 
 ---
 
-## Phase X — [Review Name] ([Severity] Findings)
+## Phase X - [Review Name] ([Severity] Findings)
 
 **Goal:** Address all [severity] findings from the [review name] review.
 
@@ -364,7 +364,7 @@ Include one fully worked example phase to show the expected format and detail le
 
 ---
 
-## Example Phase — Critical Security Issues
+## Example Phase - Critical Security Issues
 
 **Goal:** Address all Critical findings from the Security review.
 
@@ -643,7 +643,7 @@ Update the status field for each phase as you work:
 
 Example:
 ```markdown
-## Phase 1 — Architecture (Critical Findings)
+## Phase 1 - Architecture (Critical Findings)
 
 **Status:** IN PROGRESS
 ```

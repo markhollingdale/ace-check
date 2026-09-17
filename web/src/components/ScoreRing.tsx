@@ -1,64 +1,68 @@
-import { scoreTone } from '../lib/format';
+import { cn } from './ui';
 
 export function ScoreRing({
-  value,
+  score,
   label,
-  size = 72,
+  size = 96,
+  className,
 }: {
-  value: number | null;
-  label: string;
+  score: number | null | undefined;
+  label?: string;
   size?: number;
+  className?: string;
 }) {
-  const stroke = 6;
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const pct = value == null ? 0 : value / 100;
-  const dash = circumference * pct;
+  const value = score ?? 0;
+  const radius = (size - 10) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dash = (value / 100) * circumference;
 
-  const color =
-    value == null
-      ? '#cbd5e1'
+  const colour =
+    score == null
+      ? '#64748b'
       : value >= 90
-        ? '#10b981'
-        : value >= 50
-          ? '#f59e0b'
-          : '#ef4444';
+        ? '#34d399'
+        : value >= 70
+          ? '#fbbf24'
+          : value >= 50
+            ? '#fb923c'
+            : '#fb7185';
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="#e2e8f0"
-            strokeWidth={stroke}
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circumference}`}
-            className="transition-all duration-500"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={`text-xl font-bold ${scoreTone(value)}`}
-          >
-            {value ?? '—'}
-          </span>
-        </div>
+    <div
+      className={cn('relative inline-flex flex-col items-center', className)}
+      style={{ width: size }}
+    >
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={6}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={colour}
+          strokeWidth={6}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference}`}
+          style={{ transition: 'stroke-dasharray 0.6s ease' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-bold text-ink">
+          {score == null ? '-' : Math.round(value)}
+        </span>
       </div>
-      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </span>
+      {label && (
+        <span className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+          {label}
+        </span>
+      )}
     </div>
   );
 }

@@ -9,8 +9,8 @@ This document is the checklist for extending the review suite with a new review 
 # Numbering Rules
 
 - Reviews are numbered in 10-step slots: `10`, `20`, ... `180`.
-- New reviews take the next free slot. Do **not** renumber existing reviews — every generated report references the review number in its filename (`[project-name]-40-database-review.md`). Renumbering breaks comparability with historical reports.
-- The **Summary is locked at `999`** — it is always the last document in the suite, regardless of how many reviews exist. Never reuse 999 for anything else.
+- New reviews take the next free slot. Do **not** renumber existing reviews - every generated report references the review number in its filename (`[project-name]-40-database-review.md`). Renumbering breaks comparability with historical reports.
+- The **Summary is locked at `999`** - it is always the last document in the suite, regardless of how many reviews exist. Never reuse 999 for anything else.
 - The **Specification generator stays at `140`**. It is a generator, not a summary, and is not renumbered.
 
 ---
@@ -38,8 +38,8 @@ Every review must include, in this order:
 | `# [Review Name]` title | ✅ |
 | Objective (scope + "focus only on X" + "do not review Y") | ✅ |
 | Reference to `framework/20-review-framework.md` | ✅ |
-| Phase 1 — Documentation (descriptive, no assessment) with numbered sections | ✅ |
-| Phase 2 — Assessment (scored, follows the review framework) | ✅ |
+| Phase 1 - Documentation (descriptive, no assessment) with numbered sections | ✅ |
+| Phase 2 - Assessment (scored, follows the review framework) | ✅ |
 | Required Findings (severity/impact/recommendation/example/effort) | ✅ |
 | Positive Findings | ✅ |
 | Reusable Patterns | ✅ |
@@ -57,7 +57,7 @@ Reuse an existing review as a structural template (e.g., `60-code-quality-analys
 
 - No examples, paths, frameworks, or providers baked in that only apply to one project.
 - Use conditional language: "if applicable", "if X is used" (matching existing docs, e.g., "If Stripe is used").
-- The suite must run effectively on any project — validate with a smoke run (§7 of the expansion plan) on structurally different projects before declaring the review done.
+- The suite must run effectively on any project - validate with a smoke run (§7 of the expansion plan) on structurally different projects before declaring the review done.
 
 ## 5. Update every coupled file
 
@@ -69,7 +69,7 @@ Reuse an existing review as a structural template (e.g., `60-code-quality-analys
 | `audits/reviews/999-summary/999-summary.md` | Add rows to the prerequisites table and the review-scores table |
 | `audits/reviews/140-specification/140-specification.md` | Add a row to the prerequisites table and a phase to the phase map |
 
-All five updates must land in the same commit — partial updates leave the suite broken.
+All five updates must land in the same commit - partial updates leave the suite broken.
 
 ## 6. Run a smoke test
 
@@ -94,7 +94,7 @@ Before merging, execute the new review (via the runner) against at least two str
 # Retiring a Review
 
 - Mark the document with a "**Superseded**" banner at the top stating the replacement review and date.
-- Remove it from the runner options (keep a note in the prompt: "option removed — see framework readme").
+- Remove it from the runner options (keep a note in the prompt: "option removed - see framework readme").
 - Keep the document on disk so historical reports remain interpretable.
 - Remove its rows from the Summary prerequisites/scores tables and the Specification phase map.
 - Document the retirement in the Summary's notes so missing reports are explainable.
@@ -104,5 +104,5 @@ Before merging, execute the new review (via the runner) against at least two str
 # Versioning
 
 - Additive changes (new reviews, no format change): bump the minor version (e.g., v1.1.0 → v1.2.0).
-- Breaking changes (scoring methodology, severity levels, report format): bump the major version (e.g., v2.0.0) — prior reports are no longer directly comparable.
+- Breaking changes (scoring methodology, severity levels, report format): bump the major version (e.g., v2.0.0) - prior reports are no longer directly comparable.
 - Record the change in `framework/10-readme.md` under a short "changes" note.

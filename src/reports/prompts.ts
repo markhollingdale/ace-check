@@ -125,10 +125,10 @@ export function generatePagePrompt(
   lines.push('');
   lines.push(`- **Device:** ${DEVICE_LABELS[page.device]}`);
   lines.push(`- **Template:** ${page.template}`);
-  lines.push(`- **Performance:** ${page.scores.performance ?? '—'}`);
-  lines.push(`- **Accessibility:** ${page.scores.accessibility ?? '—'}`);
-  lines.push(`- **Best Practices:** ${page.scores['best-practices'] ?? '—'}`);
-  lines.push(`- **SEO:** ${page.scores.seo ?? '—'}`);
+  lines.push(`- **Performance:** ${page.scores.performance ?? '-'}`);
+  lines.push(`- **Accessibility:** ${page.scores.accessibility ?? '-'}`);
+  lines.push(`- **Best Practices:** ${page.scores['best-practices'] ?? '-'}`);
+  lines.push(`- **SEO:** ${page.scores.seo ?? '-'}`);
   lines.push('');
   lines.push('## Issues detected on this page');
   lines.push('');

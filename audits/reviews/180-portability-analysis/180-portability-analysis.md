@@ -159,7 +159,7 @@ Review:
 
 - How tightly coupled the code is to its framework (components, data access, styles)
 - Whether the framework layer is thin or woven through everything
-- Whether lock-in is an accepted trade-off (often it is — note it as such, not as a defect)
+- Whether lock-in is an accepted trade-off (often it is - note it as such, not as a defect)
 
 ---
 
@@ -280,7 +280,7 @@ Inspect module boundaries, imports, configuration, and documentation before maki
 
 Ask "would this module make sense in a different project?" for each candidate.
 
-Balance portability against pragmatism — not every project needs to be a template. Prioritise findings that create real reuse value.
+Balance portability against pragmatism - not every project needs to be a template. Prioritise findings that create real reuse value.
 
 Recognise portable code as well as coupling.
 

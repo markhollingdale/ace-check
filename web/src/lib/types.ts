@@ -227,7 +227,7 @@ export const SEVERITY_LABELS: Record<Severity, string> = {
   info: 'Info',
 };
 
-export type FindingSource = 'web' | 'static' | 'review';
+export type FindingSource = 'web' | 'static' | 'dynamic' | 'review';
 export type Confidence = 'High' | 'Medium' | 'Low';
 export type FindingStatus =
   | 'detected'
@@ -248,6 +248,7 @@ export interface FindingEvidence {
 export interface Finding {
   id: string;
   source: FindingSource;
+  stage?: StageId;
   moduleNumber?: number;
   prefix?: string;
   category: string;
@@ -313,3 +314,168 @@ export interface AuditProfile {
   description: string;
   moduleNumbers: number[];
 }
+
+// ---------------------------------------------------------------------------
+// Projects, runs and stages
+// ---------------------------------------------------------------------------
+
+export interface ProjectTargets {
+  productionUrl?: string;
+  stagingUrl?: string;
+  codebasePath?: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  createdAt: string;
+  targets: ProjectTargets;
+  profileId: string;
+  allowedHosts: string[];
+  authorised: boolean;
+  reportImports?: { playwright?: string; burp?: string };
+}
+
+export type StageId =
+  | 'target'
+  | 'sast'
+  | 'secrets'
+  | 'dependencies'
+  | 'web-quality'
+  | 'attack-surface'
+  | 'misconfig'
+  | 'dast'
+  | 'fuzzing'
+  | 'abuse'
+  | 'review'
+  | 'verdict';
+
+export type StageStatus =
+  | 'blocked'
+  | 'ready'
+  | 'running'
+  | 'passed'
+  | 'findings'
+  | 'failed'
+  | 'skipped';
+
+export interface StageRequirement {
+  codebase?: boolean;
+  url?: 'production' | 'staging';
+  binaries?: string[];
+}
+
+export interface StageState {
+  id: StageId;
+  label: string;
+  source: FindingSource;
+  status: StageStatus;
+  requires: StageRequirement;
+  severityCounts: Record<Severity, number>;
+  findings: number;
+  startedAt?: string;
+  finishedAt?: string;
+  error?: string;
+  message?: string;
+  artifacts?: string[];
+}
+
+export type RunStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled';
+
+export interface Run {
+  id: string;
+  projectId: string;
+  profileId: string;
+  label: string;
+  status: RunStatus;
+  stages: StageState[];
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  webScanId?: string;
+}
+
+export interface StageProgress {
+  projectId: string;
+  runId: string;
+  stageId: StageId;
+  status: RunStatus;
+  stageStatus: StageStatus;
+  message: string;
+  findings: number;
+  stages: StageState[];
+}
+
+export interface RunProfile {
+  id: string;
+  label: string;
+  description: string;
+  stages: StageId[];
+}
+
+export interface ScannerDescriptor {
+  id: string;
+  stage: StageId;
+  label: string;
+  description: string;
+  source: FindingSource;
+  target: 'codebase' | 'url';
+  binaries: string[];
+  install: { windows?: string; macos?: string; linux?: string; docs: string };
+  available: boolean;
+  version?: string;
+}
+
+export interface NextAction {
+  rank: number;
+  findingId: string;
+  title: string;
+  severity: Severity;
+  confidence: Confidence;
+  domain: string;
+  source: FindingSource;
+  effort?: string;
+  recommendation: string;
+  blastRadius: number;
+}
+
+export interface ProjectSummary {
+  project: Project;
+  run: Run | null;
+  gate: ReleaseGate | null;
+  findings: number;
+  openCritical: number;
+}
+
+export interface ProjectSnapshot {
+  project: Project;
+  run: Run | null;
+  stages: StageState[];
+  findings: Finding[];
+  gate: ReleaseGate | null;
+  nextActions: NextAction[];
+}
+
+export interface RunSnapshot {
+  run: Run;
+  findings: Finding[];
+  gate: ReleaseGate;
+  nextActions: NextAction[];
+}
+
+export const SOURCE_LABELS: Record<FindingSource, string> = {
+  web: 'Web',
+  static: 'Code',
+  dynamic: 'Runtime',
+  review: 'AI review',
+};
+
+export const STAGE_STATUS_LABELS: Record<StageStatus, string> = {
+  blocked: 'Blocked',
+  ready: 'Ready',
+  running: 'Running',
+  passed: 'Clean',
+  findings: 'Findings',
+  failed: 'Failed',
+  skipped: 'Skipped',
+};

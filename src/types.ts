@@ -220,7 +220,7 @@ export const SEVERITY_LABELS: Record<Severity, string> = {
   info: 'Info',
 };
 
-export type FindingSource = 'web' | 'static' | 'review';
+export type FindingSource = 'web' | 'static' | 'dynamic' | 'review';
 export type Confidence = 'High' | 'Medium' | 'Low';
 export type Proof = 'confirmed' | 'likely' | 'possible';
 export type FindingStatus =
@@ -260,6 +260,7 @@ export interface FindingEvidence {
 export interface Finding {
   id: string;
   source: FindingSource;
+  stage?: StageId;
   moduleNumber?: number;
   prefix?: string;
   category: string;
@@ -290,4 +291,128 @@ export interface ReleaseGate {
   status: ProductionStatus;
   domains: DomainVerdict[];
   severityCounts: Record<'critical' | 'high' | 'medium' | 'low', number>;
+}
+
+// ---------------------------------------------------------------------------
+// Projects, runs and stages - the guided-audit model
+// ---------------------------------------------------------------------------
+
+export interface ProjectTargets {
+  productionUrl?: string;
+  stagingUrl?: string;
+  codebasePath?: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  createdAt: string;
+  targets: ProjectTargets;
+  profileId: string;
+  allowedHosts: string[];
+  /** Whether the user has acknowledged they are authorised to actively test. */
+  authorised: boolean;
+  /** Optional report imports (produced by the target repo's own test suite). */
+  reportImports?: {
+    playwright?: string;
+    burp?: string;
+  };
+}
+
+export type StageId =
+  | 'target'
+  | 'sast'
+  | 'secrets'
+  | 'dependencies'
+  | 'web-quality'
+  | 'attack-surface'
+  | 'misconfig'
+  | 'dast'
+  | 'fuzzing'
+  | 'abuse'
+  | 'review'
+  | 'verdict';
+
+export type StageStatus =
+  | 'blocked'
+  | 'ready'
+  | 'running'
+  | 'passed'
+  | 'findings'
+  | 'failed'
+  | 'skipped';
+
+export interface StageRequirement {
+  codebase?: boolean;
+  url?: 'production' | 'staging';
+  binaries?: string[];
+}
+
+export interface StageState {
+  id: StageId;
+  label: string;
+  source: FindingSource;
+  status: StageStatus;
+  requires: StageRequirement;
+  severityCounts: Record<Severity, number>;
+  findings: number;
+  startedAt?: string;
+  finishedAt?: string;
+  error?: string;
+  message?: string;
+  artifacts?: string[];
+}
+
+export type RunStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled';
+
+export interface Run {
+  id: string;
+  projectId: string;
+  profileId: string;
+  label: string;
+  status: RunStatus;
+  stages: StageState[];
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  /** Optional link to a legacy scan directory holding Lighthouse evidence. */
+  webScanId?: string;
+}
+
+export interface StageProgress {
+  projectId: string;
+  runId: string;
+  stageId: StageId;
+  status: RunStatus;
+  stageStatus: StageStatus;
+  message: string;
+  findings: number;
+  stages: StageState[];
+}
+
+export interface ScannerDescriptor {
+  id: string;
+  stage: StageId;
+  label: string;
+  description: string;
+  source: FindingSource;
+  target: 'codebase' | 'url';
+  binaries: string[];
+  /** Copy-pasteable install instructions per platform. */
+  install: { windows?: string; macos?: string; linux?: string; docs: string };
+  available: boolean;
+  version?: string;
+}
+
+export interface NextAction {
+  rank: number;
+  findingId: string;
+  title: string;
+  severity: Severity;
+  confidence: Confidence;
+  domain: string;
+  source: FindingSource;
+  effort?: string;
+  recommendation: string;
+  blastRadius: number;
 }

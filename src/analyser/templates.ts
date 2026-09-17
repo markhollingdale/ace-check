@@ -5,7 +5,7 @@ const TEMPLATE_RULES: { template: string; patterns: RegExp[] }[] = [
   { template: 'location', patterns: [/\/locations?\//i, /location/i] },
   { template: 'product', patterns: [/\/products?\//i, /product/i] },
   { template: 'article', patterns: [/\/(articles?|blog|news|posts?)\//i, /\/blog\//i] },
-  { template: 'search', patterns: [/\/search/i, /\/whats-on/i, /\/whatson/i, /\/find/i, /[?&]q=/i, /\/query/i] },
+  { template: 'search', patterns: [/\/search/i, /\/browse/i, /\/discover/i, /\/find/i, /[?&]q=/i, /\/query/i] },
   { template: 'tag', patterns: [/\/tags?\//i] },
   { template: 'author', patterns: [/\/authors?\//i] },
 ];

@@ -4,11 +4,11 @@
 
 Perform a comprehensive assessment of the application's business logic correctness.
 
-The goal is to evaluate whether the business rules — the rules that define how the product works and makes money — are implemented correctly, completely, and safely under real-world conditions: concurrency, retries, failures, and edge cases.
+The goal is to evaluate whether the business rules - the rules that define how the product works and makes money - are implemented correctly, completely, and safely under real-world conditions: concurrency, retries, failures, and edge cases.
 
 This review focuses **only on business logic correctness**.
 
-It does **not** review security *abuse* of business logic (duplicate subscriptions, quota bypasses, workflow manipulation) — that is owned by the Security Review (20). This review owns whether the logic is *correct*.
+It does **not** review security *abuse* of business logic (duplicate subscriptions, quota bypasses, workflow manipulation) - that is owned by the Security Review (20). This review owns whether the logic is *correct*.
 
 Do **not** perform detailed reviews of architecture, database design, performance or testing except where they directly affect business logic correctness.
 
@@ -206,7 +206,7 @@ Review:
 Review:
 
 - Single source of truth for each rule (not duplicated across layers with drift)
-- Validation schema vs service logic vs database constraint — do they agree?
+- Validation schema vs service logic vs database constraint - do they agree?
 - Admin/ops paths that bypass rules the user-facing path enforces
 - Rules enforced client-side only (a correctness issue, not just security)
 
@@ -318,7 +318,7 @@ Read the implementation before making conclusions.
 
 Inspect services, state machines, payment and webhook handlers, and database constraints before making recommendations.
 
-Trace real flows end-to-end — follow a payment, a booking, a state transition from entry point to completion.
+Trace real flows end-to-end - follow a payment, a booking, a state transition from entry point to completion.
 
 Attempt to break the logic with realistic sequences (double-submit, replay, concurrent requests, out-of-order events) rather than checking for the existence of code.
 

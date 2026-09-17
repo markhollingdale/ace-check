@@ -1,7 +1,7 @@
 {
   "name": "ace-check",
   "version": "0.1.0",
-  "description": "AceCheck — check everything, ship with confidence. Local-first website + codebase auditing: crawl a site, run Lighthouse, run deterministic code checks, and orchestrate AI engineering reviews into a release gate.",
+  "description": "AceCheck - check everything, ship with confidence. Local-first security and quality auditing: run a guided progression of stages against a site and codebase, and get a single release verdict.",
   "type": "module",
   "private": true,
   "license": "MIT",
@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "start": "node dist/server/server.js",
     "audit": "tsx src/cli/cli.ts",
-    "test": "tsx --test src/audit/checks/checks.test.ts src/audit/ingest.test.ts src/audit/gate.test.ts src/audit/phase4.test.ts",
+    "test": "tsx --test src/audit/checks/checks.test.ts src/audit/ingest.test.ts src/audit/gate.test.ts src/audit/phase4.test.ts src/audit/next-actions.test.ts src/storage/projects.test.ts",
+    "licenses": "node scripts/generate-attributions.mjs",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('web/dist',{recursive:true,force:true})\""
   },
   "dependencies": {

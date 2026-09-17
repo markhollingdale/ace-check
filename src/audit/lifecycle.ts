@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { FindingStatus } from '../types.js';
+import { targetStateDir } from '../paths.js';
 
 function statusPath(codebasePath: string): string {
-  return path.join(codebasePath, '.acecheck', 'finding-status.json');
+  return path.join(targetStateDir(codebasePath), 'finding-status.json');
 }
 
 export function readFindingStatuses(

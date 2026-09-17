@@ -10,14 +10,14 @@ effort, and can be run standalone or as a full sequential suite.
 
 ## Start here
 
-- `framework/10-readme.md` — overview, philosophy, workflow, and the current review list.
-- `framework/20-review-framework.md` — the standard report/scoring format every review follows.
-- `framework/30-adding-a-review.md` — how to add, rename, or retire a review.
+- `framework/10-readme.md` - overview, philosophy, workflow, and the current review list.
+- `framework/20-review-framework.md` - the standard report/scoring format every review follows.
+- `framework/30-adding-a-review.md` - how to add, rename, or retire a review.
 
 ## Run a review
 
-- `runners/run-review.md` — run a single review (or the summary / specification).
-- `runners/run-full-suite.md` — run all 16 reviews in sequence, then the Summary.
+- `runners/run-review.md` - run a single review (or the summary / specification).
+- `runners/run-full-suite.md` - run all 16 reviews in sequence, then the Summary.
 
 ## Layout
 
