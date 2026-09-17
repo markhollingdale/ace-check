@@ -82,7 +82,7 @@ If you run **Full Suite**, the Summary will emit `⚠️ MANUAL GATE NOT SIGNED`
 
 ## Report Output
 
-Create the output folder in the **current project being reviewed** (not in AI Dev Prompts) if it does not exist:
+Create the output folder in the **current project being reviewed** (not in the framework repo) if it does not exist:
 
 ```
 docs/ai-review/reports/

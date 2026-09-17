@@ -10,7 +10,7 @@
 | **Author**            | opencode                                                                                            |
 | **Status**            | **DRAFT v0.2 — decisions captured.** All §6 open questions resolved; phasing updated.               |
 | **Source input**      | ChatGPT "production-readiness audit platform" draft + the existing Ace AI Review Framework          |
-| **Prerequisites**     | `C:\Dev\AI Dev Prompts\ai-review` (16 reviews + summary + specification) — to be copied in, then deleted |
+| **Prerequisites**     | The external `ai-review` collection (16 reviews + summary + specification) — to be copied in, then deleted |
 
 > **STATUS:** This is a first-pass exploration plan. It is deliberately a
 > *reconciliation* document: ChatGPT proposed a large, mostly-correct product
@@ -422,8 +422,8 @@ All seven questions answered (2026-08-14). Where the answer was "go with your
 preferred option", the original lean is adopted.
 
 1. **Where does the ai-review framework live?** → **Vendored into this repo as
-   `audits/`, and it becomes the source of truth.** The external copy at
-   `C:\Dev\AI Dev Prompts\ai-review` is deleted. Phase 0 also normalises the
+   `audits/`, and it becomes the source of truth.** The external copy of the
+   `ai-review` collection is deleted. Phase 0 also normalises the
    runner's internal relative paths (they currently assume a different layout).
 2. **Where do reports get written?** → **A hidden base-path folder in the target
    project, `.acecheck/`, gitignored** (the `.unlighthouse` pattern). The app must
@@ -459,7 +459,7 @@ as a module manifest.
       `bin.acecheck` → `dist/cli/cli.js`), workspace package `site-audit-web` →
       `ace-check-web`, config file `site-audit.config.json` → `acecheck.config.json`,
       README/branding/tagline, `.gitignore` (`scans/` + `.acecheck/`).
-- [x] Vendor `C:\Dev\AI Dev Prompts\ai-review` → `audits/` (framework + reviews +
+- [x] Vendor the external `ai-review` collection → `audits/` (framework + reviews +
       runners + README). External copy left in place for the user to delete.
 - [x] Normalise the runner's internal relative paths (`run-review.md`,
       `run-full-suite.md`) for the new `audits/` layout (`../ai-review/` → `../`).

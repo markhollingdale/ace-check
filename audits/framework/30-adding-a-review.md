@@ -20,13 +20,13 @@ This document is the checklist for extending the review suite with a new review 
 ## 1. Create the review directory and document
 
 ```
-ai-review/reviews/[number]-[name]-analysis/[number]-[name]-analysis.md
+audits/reviews/[number]-[name]-analysis/[number]-[name]-analysis.md
 ```
 
 Example:
 
 ```
-ai-review/reviews/150-testing-analysis/150-testing-analysis.md
+audits/reviews/150-testing-analysis/150-testing-analysis.md
 ```
 
 ## 2. Follow the style conformance checklist
@@ -63,11 +63,11 @@ Reuse an existing review as a structural template (e.g., `60-code-quality-analys
 
 | File | What to change |
 | ---- | -------------- |
-| `ai-review/runners/run-review.md` | Add the option to the selection prompt and the file-path table |
-| `ai-review/framework/10-readme.md` | Add a row to the Current Reviews table; update workflow order if it has a natural position |
-| `README.md` (root) | Update the review count and "What's Included" |
-| `ai-review/reviews/999-summary/999-summary.md` | Add rows to the prerequisites table and the review-scores table |
-| `ai-review/reviews/140-specification/140-specification.md` | Add a row to the prerequisites table and a phase to the phase map |
+| `audits/runners/run-review.md` | Add the option to the selection prompt and the file-path table |
+| `audits/framework/10-readme.md` | Add a row to the Current Reviews table; update workflow order if it has a natural position |
+| `audits/README.md` (framework root) | Update the review count and "What's Included" |
+| `audits/reviews/999-summary/999-summary.md` | Add rows to the prerequisites table and the review-scores table |
+| `audits/reviews/140-specification/140-specification.md` | Add a row to the prerequisites table and a phase to the phase map |
 
 All five updates must land in the same commit — partial updates leave the suite broken.
 

@@ -1,7 +1,7 @@
 # Ace AI Review Framework (vendored)
 
 This directory is the **source of truth** for the Ace AI Review Framework, vendored
-into AceCheck. It was previously maintained at `C:\Dev\AI Dev Prompts\ai-review`.
+into AceCheck. It was previously maintained as a standalone `ai-review` collection.
 
 The framework defines a versioned suite of structured engineering reviews (16
 reviews + a Summary aggregator + a Specification generator). Each review follows a
