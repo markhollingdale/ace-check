@@ -214,12 +214,21 @@ export function RunPage() {
 
   const { run, findings, gate, nextActions } = snapshot;
   const stages = progress?.stages ?? run.stages;
-  const current = stages.find((s) => s.status === 'running');
+  // Prefer the stage actually executing; fall back to whichever stage the last
+  // progress update referred to, so the strip never reads "Starting" mid-run.
+  const current =
+    stages.find((s) => s.status === 'running') ??
+    (progress?.stageId
+      ? stages.find((s) => s.id === progress.stageId)
+      : undefined);
   const completed = stages.filter((s) =>
     ['passed', 'findings', 'failed', 'skipped'].includes(s.status),
   ).length;
   const pct = Math.round((completed / Math.max(1, stages.length)) * 100);
   const totalElapsed = elapsedMs(run.startedAt, run.finishedAt, now);
+  // Show the stage being worked on, not how many have already finished.
+  const runningIndex = stages.findIndex((s) => s.status === 'running');
+  const stageNumber = runningIndex >= 0 ? runningIndex + 1 : completed;
 
   return (
     <div className="animate-in space-y-6">
@@ -273,7 +282,7 @@ export function RunPage() {
           action={
             <div className="flex items-center gap-2">
               <span className="font-mono text-xs text-muted">
-                {completed}/{stages.length} stages ·{' '}
+                Stage {stageNumber} of {stages.length} ·{' '}
                 {formatClock(totalElapsed ?? 0)}
               </span>
               <Button
@@ -291,10 +300,13 @@ export function RunPage() {
             <ProgressBar value={pct} />
             <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
-              {current ? current.label : 'Starting'}
+              {current ? current.label : 'Preparing next stage'}
               <span className="text-muted">·</span>
               <span className="truncate">
-                {progress?.message || 'working...'}
+                {progress?.message ||
+                  (current?.status === 'running'
+                    ? 'working...'
+                    : 'finishing up...')}
               </span>
             </p>
             <p className="text-shimmer mt-2 text-xs font-medium">{quip}</p>
@@ -358,6 +370,7 @@ export function RunPage() {
               busyStageId={busyStage}
               runningStageId={current?.id}
               now={now}
+              runActive={running}
             />
           </Panel>
         </>

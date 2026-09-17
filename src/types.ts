@@ -35,6 +35,8 @@ export interface ScanConfig {
    * (~400 KB each), so the default keeps them only where there are findings.
    */
   lighthouseHtml?: 'never' | 'findings' | 'always';
+  /** Hard per-page limit for a Lighthouse run (ms). Defaults to 120s. */
+  lighthouseTimeoutMs?: number;
 }
 
 export interface PageScores {

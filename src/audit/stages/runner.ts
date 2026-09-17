@@ -315,16 +315,20 @@ async function runWebQualityStage(
         const total = tasks?.length ?? 0;
         // Show the item being worked on now, not the number already finished.
         const runningIndex = tasks?.findIndex((t) => t.status === 'running') ?? -1;
+        const failed =
+          tasks?.filter((t) => t.status === 'failed').length ?? 0;
         const finished =
           tasks?.filter((t) => t.status === 'done' || t.status === 'failed')
             .length ?? 0;
         const position =
           runningIndex >= 0 ? runningIndex + 1 : Math.min(finished + 1, total);
-        const message = u.message
+        const base = u.message
           ? u.message
           : u.currentUrl
             ? `Lighthouse ${position} of ${total} - ${shortUrl(u.currentUrl)}`
             : `Lighthouse across ${total} page run(s)`;
+        // Surface failures live: a broken browser shows up here, not silently.
+        const message = failed > 0 ? `${base} (${failed} failed)` : base;
         emit(message, tasks);
       },
       shouldCancel,

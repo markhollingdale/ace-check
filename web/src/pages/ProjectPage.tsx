@@ -216,6 +216,7 @@ export function ProjectPage() {
                 busyStageId={busyStage}
                 currentStageId={run?.stages.find((x) => x.status === 'running')?.id}
                 now={now}
+                runActive={anyRunning}
               />
             </Panel>
           )}

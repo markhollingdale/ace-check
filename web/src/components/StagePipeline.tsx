@@ -34,6 +34,7 @@ export function StagePipeline({
   currentStageId,
   now,
   showOutput = true,
+  runActive = false,
 }: {
   stages: StageState[];
   defs?: Record<string, StageDef>;
@@ -44,21 +45,28 @@ export function StagePipeline({
   currentStageId?: StageId | null;
   now?: number;
   showOutput?: boolean;
+  /** True while the run is executing, so stage actions stay locked. */
+  runActive?: boolean;
 }) {
-  const [expanded, setExpanded] = useState<string | null>(
-    runningStageId ?? currentStageId ?? null,
-  );
+  // `undefined` means "follow the active stage"; once the user toggles a row we
+  // switch to explicit control so any row - including the running one - can be
+  // collapsed.
+  const [expanded, setExpanded] = useState<string | null | undefined>(undefined);
 
   const activeId = runningStageId ?? currentStageId ?? null;
+  const isOpenFor = (id: string) =>
+    expanded === undefined ? activeId === id : expanded === id;
+  const toggle = (id: string) => setExpanded(isOpenFor(id) ? null : id);
 
   return (
     <ol className="relative space-y-2">
       {stages.map((stage, i) => {
         const def = defs?.[stage.id];
         const isRunning = runningStageId === stage.id || stage.status === 'running';
-        const isOpen = expanded === stage.id || (activeId === stage.id && expanded === null);
+        const isOpen = isOpenFor(stage.id);
         const duration = elapsedMs(stage.startedAt, stage.finishedAt, now);
         const live = isRunning && stage.startedAt;
+        const stageBusy = isRunning || busyStageId === stage.id;
 
         return (
           <li key={stage.id}>
@@ -95,11 +103,25 @@ export function StagePipeline({
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <button
                       type="button"
-                      onClick={() =>
-                        setExpanded(isOpen && activeId !== stage.id ? null : stage.id)
-                      }
-                      className="text-left text-sm font-semibold text-ink cursor-pointer hover:text-accent"
+                      onClick={() => toggle(stage.id)}
+                      aria-expanded={isOpen}
+                      className="flex items-center gap-1.5 text-left text-sm font-semibold text-ink cursor-pointer hover:text-accent"
                     >
+                      <svg
+                        className={cn(
+                          'h-3 w-3 shrink-0 text-muted transition-transform',
+                          isOpen && 'rotate-90',
+                        )}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
                       {stage.label}
                     </button>
                     <span className="rounded-md border border-line bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
@@ -183,14 +205,23 @@ export function StagePipeline({
                     <Button
                       variant={stage.status === 'ready' ? 'secondary' : 'ghost'}
                       size="sm"
-                      disabled={stage.status === 'blocked' || busyStageId === stage.id}
+                      disabled={stage.status === 'blocked' || stageBusy || runActive}
                       onClick={() => onRunStage(stage.id)}
+                      title={
+                        runActive && !stageBusy
+                          ? 'A run is already in progress'
+                          : undefined
+                      }
                     >
-                      {busyStageId === stage.id || isRunning
-                        ? 'Running...'
-                        : stage.status === 'ready' || stage.status === 'blocked'
-                          ? 'Run'
-                          : 'Re-run'}
+                      {stageBusy
+                        ? busyStageId === stage.id
+                          ? 'Starting...'
+                          : 'Running...'
+                        : runActive
+                          ? 'Queued'
+                          : stage.status === 'ready' || stage.status === 'blocked'
+                            ? 'Run'
+                            : 'Re-run'}
                     </Button>
                   )}
                 </div>

@@ -10,7 +10,11 @@ import { devicesForConfig, resolveMaxPages } from '../config.js';
 import { discoverUrls } from '../crawler/crawler.js';
 import { detectTemplate } from '../analyser/templates.js';
 import { parseLighthouse, runtimeErrorMessage } from '../lighthouse/parser.js';
-import { LighthouseRunner, type LighthouseError } from '../lighthouse/runner.js';
+import {
+  LighthouseRunner,
+  isChromeFailure,
+  type LighthouseError,
+} from '../lighthouse/runner.js';
 import { analyse } from '../analyser/analyser.js';
 import { logScanError } from '../log.js';
 import { generateAiReport, type ReportInput } from '../reports/markdown.js';
@@ -152,7 +156,9 @@ async function runLighthousePages(
   // causing "performance mark has not been set" crashes. A single Chrome
   // instance is reused for every page, and the `concurrency` setting is
   // applied to the crawler (see discoverUrls) rather than to Lighthouse.
-  const runner = new LighthouseRunner();
+  const runner = new LighthouseRunner({
+    runTimeoutMs: config.lighthouseTimeoutMs,
+  });
   const devices = devicesForConfig(config.device);
   const multi = devices.length > 1;
   const totalRuns = urls.length * devices.length;
@@ -162,7 +168,12 @@ async function runLighthousePages(
   let completed = 0;
   let succeeded = 0;
   let failed = 0;
+  let consecutiveFailures = 0;
   let itemIndex = 0;
+
+  // If Chrome is wedged it fails every page identically. Grinding through
+  // hundreds of 90s timeouts helps nobody, so stop and say why.
+  const MAX_CONSECUTIVE_FAILURES = 5;
 
   try {
     await runner.launch();
@@ -225,10 +236,33 @@ async function runLighthousePages(
         await writePageSummary(scanId, page);
         pages.push(page);
         completed++;
-        if (page.status === 'ok') succeeded++;
-        else failed++;
+        if (page.status === 'ok') {
+          succeeded++;
+          consecutiveFailures = 0;
+        } else {
+          failed++;
+          consecutiveFailures++;
+        }
 
         if (item) item.status = page.status === 'ok' ? 'done' : 'failed';
+
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          const message =
+            `Lighthouse failed on ${MAX_CONSECUTIVE_FAILURES} pages in a row. ` +
+            'Chrome/Chromium appears to be unresponsive - check the browser ' +
+            'installation, then re-run this stage.';
+          emit({
+            status: 'failed',
+            phase: 'scanning',
+            discovered: urls.length,
+            scanned: completed,
+            succeeded,
+            failed,
+            total: totalRuns,
+            message,
+          });
+          throw new Error(message);
+        }
       }
     }
   } finally {
@@ -488,6 +522,11 @@ async function runSinglePage(
           `scan ${scanId} page ${url} [${device}] lighthouse runtime error`,
           new Error(runtimeError),
         );
+        // A dirty renderer reports this as a runtime error rather than a throw,
+        // so restart Chrome before the retry or it will fail identically.
+        if (isChromeFailure(runtimeError)) {
+          await runner.restart().catch(() => undefined);
+        }
         page = failedPage(slug, url, device, template, runtimeError);
         page.hasLighthouseJson = true;
         continue;
@@ -520,7 +559,11 @@ async function runSinglePage(
       };
     } catch (err) {
       const classified = err as LighthouseError;
-      if (classified?.kind === 'network' || classified?.kind === 'timeout') {
+      if (
+        classified?.kind === 'network' ||
+        classified?.kind === 'timeout' ||
+        classified?.kind === 'chrome'
+      ) {
         continue;
       }
       await logScanError(

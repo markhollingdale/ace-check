@@ -61,6 +61,7 @@ export function defaultConfig(overrides: Partial<ScanConfig> = {}): ScanConfig {
     includeLinks: true,
     ignoredQueryParams: [...DEFAULT_IGNORED_QUERY_PARAMS],
     lighthouseHtml: 'findings',
+    lighthouseTimeoutMs: 90_000,
     ...loadConfigFile(),
     ...clean,
   };
