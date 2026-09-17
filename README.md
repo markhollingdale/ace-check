@@ -38,9 +38,12 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:5173 to use the GUI.
+Open http://localhost:5173 to use the GUI. The API server runs on 3210 in both
+modes; during development Vite proxies `/api` to it, so you only need to open
+5173.
 
-To run the production build:
+To run the production build, a single Node server serves both the UI and the API
+on 3210:
 
 ```bash
 pnpm build
