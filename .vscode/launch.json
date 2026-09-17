@@ -1,0 +1,60 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["--import", "tsx"],
+      "program": "${workspaceFolder}/src/server/server.ts",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "env": {
+        "PORT": "3210"
+      }
+    },
+    {
+      "name": "Run Web (Vite)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/web/node_modules/vite/bin/vite.js",
+      "cwd": "${workspaceFolder}/web",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Debug CLI",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["--import", "tsx"],
+      "program": "${workspaceFolder}/src/cli/cli.ts",
+      "args": ["${input:scanUrl}", "--mode", "${input:scanMode}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full App (Server + Web)",
+      "configurations": ["Debug Server", "Run Web (Vite)"],
+      "stopAll": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "scanUrl",
+      "type": "promptString",
+      "description": "Website URL to scan",
+      "default": "https://example.com"
+    },
+    {
+      "id": "scanMode",
+      "type": "pickString",
+      "description": "Scan mode",
+      "options": ["quick", "standard", "full"],
+      "default": "quick"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "name": "ace-check",
+  "version": "0.1.0",
+  "description": "AceCheck — check everything, ship with confidence. Local-first website + codebase auditing: crawl a site, run Lighthouse, run deterministic code checks, and orchestrate AI engineering reviews into a release gate.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "acecheck": "dist/cli/cli.js"
+  },
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"pnpm dev:server:watch\" \"pnpm dev:web\"",
+    "dev:server": "tsx src/server/server.ts",
+    "dev:server:watch": "tsx watch src/server/server.ts",
+    "dev:web": "pnpm --filter ace-check-web dev",
+    "build": "pnpm build:web && pnpm build:server",
+    "build:server": "tsup src/server/server.ts src/cli/cli.ts --format esm --platform node --out-dir dist --sourcemap",
+    "build:web": "pnpm --filter ace-check-web build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
+    "start": "node dist/server/server.js",
+    "audit": "tsx src/cli/cli.ts",
+    "test": "tsx --test src/audit/checks/checks.test.ts src/audit/ingest.test.ts src/audit/gate.test.ts src/audit/phase4.test.ts",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('web/dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "chrome-launcher": "^1.1.2",
+    "fast-xml-parser": "^4.5.0",
+    "hono": "^4.6.14",
+    "lighthouse": "^13.4.1",
+    "node-html-parser": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
