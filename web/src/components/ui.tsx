@@ -333,16 +333,19 @@ export function CopyButton({
   text,
   label = 'Copy',
   className,
+  disabled,
 }: {
   text: string;
   label?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
     <Button
       variant="secondary"
       size="sm"
       className={className}
+      disabled={disabled}
       onClick={async (e) => {
         const btn = e.currentTarget;
         await navigator.clipboard.writeText(text);

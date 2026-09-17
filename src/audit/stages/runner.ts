@@ -4,11 +4,13 @@ import type {
   Finding,
   Project,
   Run,
+  ScanItem,
   Severity,
   StageId,
   StageProgress,
   StageState,
   StageStatus,
+  StageTask,
 } from '../../types.js';
 import { defaultConfig } from '../../config.js';
 import { runScan } from '../../scanner/scanner.js';
@@ -33,6 +35,7 @@ import {
 import { runCodeChecks, type CheckName } from '../checks/index.js';
 import {
   describeScanner,
+  listScannerDescriptors,
   scannersForStage,
 } from '../scanners/registry.js';
 import { parseImportedReport } from '../scanners/import.js';
@@ -182,7 +185,23 @@ async function runTargetStage(
     stagingUrl: project.targets.stagingUrl,
     codebasePath: project.targets.codebasePath,
     allowedHosts: project.allowedHosts,
+    authorised: project.authorised,
   };
+
+  const scanners = await listScannerDescriptors();
+  info.scanners = scanners.map((s) => ({
+    id: s.id,
+    label: s.label,
+    stage: s.stage,
+    available: s.available,
+    version: s.version ?? null,
+  }));
+  const available = scanners.filter((s) => s.available).map((s) => s.label);
+  info.availableScanners = available;
+  info.missingScanners = scanners
+    .filter((s) => !s.available)
+    .map((s) => s.label);
+
   if (project.targets.codebasePath) {
     try {
       const raw = await readFile(
@@ -210,6 +229,11 @@ async function runTargetStage(
   } else {
     emit('URL-only target');
   }
+  emit(
+    available.length > 0
+      ? `Scanners available: ${available.join(', ')}`
+      : 'No external scanners installed - built-in checks will be used',
+  );
   await writeRunReport(
     project.id,
     runId,
@@ -248,10 +272,28 @@ async function runStaticStage(
     : [];
 }
 
+function shortUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}` || '/';
+  } catch {
+    return url;
+  }
+}
+
+function toTasks(items: ScanItem[] | undefined): StageTask[] | undefined {
+  if (!items || items.length === 0) return undefined;
+  return items.map((item) => ({
+    key: item.key,
+    label: item.label,
+    status: item.status,
+  }));
+}
+
 async function runWebQualityStage(
   project: Project,
   runId: string,
-  emit: (message: string) => void,
+  emit: (message: string, tasks?: StageTask[]) => void,
   shouldCancel: () => boolean,
 ): Promise<Finding[]> {
   const url = project.targets.productionUrl ?? project.targets.stagingUrl;
@@ -264,10 +306,23 @@ async function runWebQualityStage(
     concurrency: 2,
     respectRobots: true,
   });
+  emit(`Crawling ${url} to discover pages`);
   await runScan(
     config,
     {
-      onProgress: (u) => emit(u.message || `Scanning ${u.currentUrl ?? ''}`),
+      onProgress: (u) => {
+        const tasks = toTasks(u.items);
+        const total = tasks?.length ?? 0;
+        const done = tasks?.filter(
+          (t) => t.status === 'done' || t.status === 'failed',
+        ).length ?? 0;
+        const message = u.message
+          ? u.message
+          : u.currentUrl
+            ? `Lighthouse (${done}/${total}) ${shortUrl(u.currentUrl)}`
+            : `Lighthouse across ${total} page run(s)`;
+        emit(message, tasks);
+      },
       shouldCancel,
     },
     runId,
@@ -385,7 +440,7 @@ async function runStage(
   project: Project,
   run: Run,
   stage: StageState,
-  emit: (message: string) => void,
+  emit: (message: string, tasks?: StageTask[]) => void,
   shouldCancel: () => boolean,
 ): Promise<Finding[]> {
   switch (stage.id) {
@@ -443,8 +498,9 @@ async function executeStageIntoRun(
   callbacks: RunCallbacks,
 ): Promise<void> {
   const shouldCancel = callbacks.shouldCancel ?? (() => false);
-  const emit = (message: string) => {
+  const emit = (message: string, tasks?: StageTask[]) => {
     stage.message = message;
+    if (tasks) stage.tasks = tasks;
     notify(run, stage, callbacks);
   };
 

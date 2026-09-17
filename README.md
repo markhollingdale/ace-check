@@ -164,7 +164,7 @@ lockfile.
 ### Licensing notes
 
 A licence audit of the dependency tree (243 packages) found **no strong
-copyleft** — no GPL, AGPL, LGPL, EPL or CDDL code is bundled, so AceCheck's MIT
+copyleft** - no GPL, AGPL, LGPL, EPL or CDDL code is bundled, so AceCheck's MIT
 license is compatible with everything it ships. Three points are worth knowing:
 
 - **MPL-2.0** (`axe-core`, `lightningcss`): weak, file-level copyleft. We do not

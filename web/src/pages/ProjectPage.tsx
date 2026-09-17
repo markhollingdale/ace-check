@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   getProject,
+  getStages,
   runStage as runStageApi,
   startRun,
   listRuns,
 } from '../lib/api';
-import type { ProjectSnapshot, Run, StageId } from '../lib/types';
+import type { ProjectSnapshot, Run, StageDef, StageId } from '../lib/types';
 import { formatDate, formatDuration } from '../lib/format';
+import { useNow } from '../lib/useNow';
 import { Crumb, PageHeader } from '../components/Shell';
 import { VerdictBanner } from '../components/Verdict';
 import { StagePipeline } from '../components/StagePipeline';
@@ -31,6 +33,7 @@ export function ProjectPage() {
   const [busyStage, setBusyStage] = useState<StageId | null>(null);
   const [starting, setStarting] = useState(false);
   const [tab, setTab] = useState('pipeline');
+  const [stageDefs, setStageDefs] = useState<Record<string, StageDef>>({});
 
   const load = useCallback(async () => {
     try {
@@ -48,6 +51,11 @@ export function ProjectPage() {
   useEffect(() => {
     setLoading(true);
     load();
+    getStages()
+      .then((defs) =>
+        setStageDefs(Object.fromEntries(defs.map((d) => [d.id, d]))),
+      )
+      .catch(() => setStageDefs({}));
   }, [load]);
 
   const anyRunning =
@@ -58,6 +66,8 @@ export function ProjectPage() {
     const timer = setInterval(load, 1500);
     return () => clearInterval(timer);
   }, [anyRunning, load]);
+
+  const now = useNow(anyRunning);
 
   const onRunAudit = async () => {
     if (!snapshot) return;
@@ -198,12 +208,14 @@ export function ProjectPage() {
             >
               <StagePipeline
                 stages={stages}
+                defs={stageDefs}
                 onRunStage={onRunStage}
                 onOpenStage={() =>
                   navigate(`/projects/${project.id}/findings`)
                 }
                 busyStageId={busyStage}
                 currentStageId={run?.stages.find((x) => x.status === 'running')?.id}
+                now={now}
               />
             </Panel>
           )}

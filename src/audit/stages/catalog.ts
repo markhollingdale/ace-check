@@ -8,6 +8,10 @@ export interface StageDef {
   source: FindingSource;
   description: string;
   requires: StageRequirement;
+  /** Tools the stage drives, shown in the UI so it is clear what runs under the hood. */
+  tools: string[];
+  /** What the stage leaves behind, so users know where to look for results. */
+  output: string;
 }
 
 export const STAGE_CATALOG: StageDef[] = [
@@ -18,8 +22,11 @@ export const STAGE_CATALOG: StageDef[] = [
     short: 'Target',
     source: 'static',
     description:
-      'Resolves the target, detects the stack, and probes for installed scanners.',
+      'Reconnaissance only: it resolves the target URLs, reads the project manifest to identify the stack, and checks which scanner binaries are installed. It never reports findings.',
     requires: {},
+    tools: ['package.json inspection', 'scanner detection'],
+    output:
+      'Recorded as target.json on the run (stack, project name, URLs) and shown in the stage detail.',
   },
   {
     id: 'sast',
@@ -27,8 +34,11 @@ export const STAGE_CATALOG: StageDef[] = [
     label: 'Static analysis (SAST)',
     short: 'SAST',
     source: 'static',
-    description: 'Pattern-based analysis of the source for security defects.',
+    description:
+      'Pattern-based analysis of the source code for security defects.',
     requires: { codebase: true, binaries: ['semgrep'] },
+    tools: ['Semgrep CE', 'built-in config/hygiene checks (fallback)'],
+    output: 'Findings with file and line evidence.',
   },
   {
     id: 'secrets',
@@ -38,6 +48,8 @@ export const STAGE_CATALOG: StageDef[] = [
     source: 'static',
     description: 'Detects credentials committed to the repo or its history.',
     requires: { codebase: true, binaries: ['gitleaks'] },
+    tools: ['Gitleaks', 'built-in secret patterns (fallback)'],
+    output: 'Findings with file and line evidence.',
   },
   {
     id: 'dependencies',
@@ -47,6 +59,8 @@ export const STAGE_CATALOG: StageDef[] = [
     source: 'static',
     description: 'Checks dependencies against the OSV vulnerability database.',
     requires: { codebase: true, binaries: ['osv-scanner'] },
+    tools: ['OSV-Scanner', 'built-in dependency audit (fallback)'],
+    output: 'Findings naming the affected package and version.',
   },
   {
     id: 'web-quality',
@@ -55,8 +69,11 @@ export const STAGE_CATALOG: StageDef[] = [
     short: 'Web',
     source: 'web',
     description:
-      'Crawls the site and runs Lighthouse for performance, accessibility and SEO.',
+      'Crawls the site, then runs Google Lighthouse on each selected page for performance, accessibility, best practices and SEO. One Lighthouse run per page, per device.',
     requires: { url: 'production' },
+    tools: ['Google Lighthouse', 'Chrome/Chromium', 'sitemap + link crawler'],
+    output:
+      'Per-page Lighthouse JSON and HTML, aggregated findings, and a site summary.',
   },
   {
     id: 'attack-surface',
@@ -66,6 +83,8 @@ export const STAGE_CATALOG: StageDef[] = [
     source: 'dynamic',
     description: 'Discovers open ports and services on the target host.',
     requires: { url: 'production', binaries: ['nmap'] },
+    tools: ['Nmap'],
+    output: 'Findings for each exposed port and service.',
   },
   {
     id: 'misconfig',
@@ -76,6 +95,8 @@ export const STAGE_CATALOG: StageDef[] = [
     description:
       'Template-driven checks for exposed paths, headers and known CVEs.',
     requires: { url: 'production', binaries: ['nuclei'] },
+    tools: ['ProjectDiscovery Nuclei'],
+    output: 'Findings with the matched template and endpoint.',
   },
   {
     id: 'dast',
@@ -85,6 +106,8 @@ export const STAGE_CATALOG: StageDef[] = [
     source: 'dynamic',
     description: 'Automated active scanning of the running application.',
     requires: { url: 'staging', binaries: ['docker'] },
+    tools: ['OWASP ZAP baseline (via Docker)'],
+    output: 'Findings with the affected URL and remediation guidance.',
   },
   {
     id: 'fuzzing',
@@ -94,6 +117,8 @@ export const STAGE_CATALOG: StageDef[] = [
     source: 'dynamic',
     description: 'Content and endpoint discovery against an authorised host.',
     requires: { url: 'staging', binaries: ['ffuf'] },
+    tools: ['ffuf'],
+    output: 'Findings for each discovered endpoint.',
   },
   {
     id: 'abuse',
@@ -102,8 +127,10 @@ export const STAGE_CATALOG: StageDef[] = [
     short: 'Abuse',
     source: 'dynamic',
     description:
-      'Imports the target project\'s own abuse/authorisation test results.',
+      "Imports the target project's own abuse and authorisation test results. AceCheck does not own these rules - they live with your app.",
     requires: {},
+    tools: ['Playwright JSON report', 'Burp Suite XML export'],
+    output: 'Findings for each failing security-relevant test.',
   },
   {
     id: 'review',
@@ -112,8 +139,10 @@ export const STAGE_CATALOG: StageDef[] = [
     short: 'Review',
     source: 'review',
     description:
-      'The 16 engineering reviews - run in an agent or in-tool, then ingested.',
+      'The 16 engineering reviews, run in an agent or in-tool, then ingested.',
     requires: { codebase: true },
+    tools: ['16-module review framework', 'your AI agent (or a configured API)'],
+    output: 'Findings imported from each review report.',
   },
   {
     id: 'verdict',
@@ -121,8 +150,11 @@ export const STAGE_CATALOG: StageDef[] = [
     label: 'Verdict',
     short: 'Verdict',
     source: 'static',
-    description: 'Aggregates every finding into a release gate and report.',
+    description:
+      'Aggregates every finding from every stage into domain verdicts, an overall production status, and the release report.',
     requires: {},
+    tools: ['release gate', 'correlation engine'],
+    output: 'release.md and release-ai.md on the run.',
   },
 ];
 

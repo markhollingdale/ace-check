@@ -1,6 +1,7 @@
 import type {
   AuditProfile,
   Finding,
+  FindingSource,
   FindingStatus,
   PageSummary,
   Project,
@@ -12,6 +13,7 @@ import type {
   RunSnapshot,
   ScannerDescriptor,
   ScanComparison,
+  StageDef,
   StageId,
   StageProgress,
 } from './types';
@@ -57,6 +59,62 @@ export async function getScanners(refresh = false): Promise<ScannerDescriptor[]>
 export async function getRunProfiles(): Promise<RunProfile[]> {
   const res = await fetch('/api/run-profiles');
   return (await json<{ profiles: RunProfile[] }>(res)).profiles;
+}
+
+export async function getStages(): Promise<StageDef[]> {
+  const res = await fetch('/api/stages');
+  return (await json<{ stages: StageDef[] }>(res)).stages;
+}
+
+export interface RunTarget {
+  productionUrl?: string | null;
+  stagingUrl?: string | null;
+  codebasePath?: string | null;
+  allowedHosts?: string[];
+  stack?: string[];
+  projectName?: string;
+  authorised?: boolean;
+  scanners?: {
+    id: string;
+    label: string;
+    stage: string;
+    available: boolean;
+    version: string | null;
+  }[];
+}
+
+export async function getRunTarget(
+  projectId: string,
+  runId: string,
+): Promise<RunTarget | null> {
+  const res = await fetch(`/api/projects/${projectId}/runs/${runId}/target`);
+  return (await json<{ target: RunTarget | null }>(res)).target;
+}
+
+export async function getFindingPrompt(
+  projectId: string,
+  findingId: string,
+): Promise<string> {
+  const res = await fetch(
+    `/api/projects/${projectId}/findings/${encodeURIComponent(findingId)}/prompt`,
+    { method: 'POST' },
+  );
+  if (!res.ok) throw new Error('Could not generate a prompt for this finding.');
+  return res.text();
+}
+
+export async function getRunPrompt(
+  projectId: string,
+  runId: string,
+  opts: { stage?: StageId; source?: FindingSource } = {},
+): Promise<string> {
+  const res = await fetch(`/api/projects/${projectId}/runs/${runId}/prompt`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(opts),
+  });
+  if (!res.ok) throw new Error('Could not generate a prompt for this run.');
+  return res.text();
 }
 
 export interface AttributionsData {

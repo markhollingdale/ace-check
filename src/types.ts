@@ -276,6 +276,10 @@ export interface Finding {
   affectedPages?: string[];
   affectedFiles?: string[];
   status: FindingStatus;
+  /** Human-readable context lines (blast radius, devices, impact). */
+  context?: { label: string; value: string }[];
+  /** Raw evidence items captured from the underlying tool, for prompts and detail views. */
+  details?: Record<string, unknown>[];
 }
 
 export interface DomainVerdict {
@@ -348,6 +352,15 @@ export interface StageRequirement {
   binaries?: string[];
 }
 
+export type StageTaskStatus = 'pending' | 'running' | 'done' | 'failed';
+
+/** A unit of work inside a stage (e.g. one Lighthouse page run). */
+export interface StageTask {
+  key: string;
+  label: string;
+  status: StageTaskStatus;
+}
+
 export interface StageState {
   id: StageId;
   label: string;
@@ -361,6 +374,8 @@ export interface StageState {
   error?: string;
   message?: string;
   artifacts?: string[];
+  /** Live progress details for long stages; newest state wins. */
+  tasks?: StageTask[];
 }
 
 export type RunStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled';

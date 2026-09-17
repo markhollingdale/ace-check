@@ -48,6 +48,34 @@ export function correlationKeysForIssue(issue: Issue): string[] {
 }
 
 export function issueToFinding(issue: Issue): Finding {
+  const context: { label: string; value: string }[] = [
+    { label: 'Affected pages', value: `${issue.count} / ${issue.totalPages}` },
+  ];
+  if (issue.devices.length > 0) {
+    context.push({ label: 'Devices', value: issue.devices.join(' + ') });
+  }
+  if (issue.affectedTemplates.length > 0) {
+    context.push({
+      label: 'Likely templates',
+      value: issue.affectedTemplates
+        .slice(0, 4)
+        .map((t) => `${t.template} (${t.count})`)
+        .join(', '),
+    });
+  }
+  if (issue.displayValue) {
+    context.push({ label: 'Lighthouse impact', value: issue.displayValue });
+  }
+  if (issue.avgNumericValue != null) {
+    context.push({
+      label: 'Average value across pages',
+      value: String(Math.round(issue.avgNumericValue)),
+    });
+  }
+  context.push({ label: 'Likely common cause', value: issue.likelyCommonCause });
+
+  const samplePages = issue.affectedUrls.slice(0, 5);
+
   return {
     id: issue.id,
     source: 'web',
@@ -63,9 +91,16 @@ export function issueToFinding(issue: Issue): Finding {
       numericValue: issue.avgNumericValue,
       proof: 'confirmed',
     },
+    recommendation: `${issue.likelyCommonCause}${
+      samplePages.length > 0
+        ? ` Start from these pages: ${samplePages.join(', ')}.`
+        : ''
+    }`,
     correlationKeys: correlationKeysForIssue(issue),
     affectedPages: issue.affectedUrls,
     status: 'detected',
+    context,
+    details: issue.examples.slice(0, 8),
   };
 }
 

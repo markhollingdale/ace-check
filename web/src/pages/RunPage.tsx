@@ -3,8 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   getRun,
   getRunProgress,
+  getRunPrompt,
   getPages,
   getProject,
+  getStages,
+  getRunTarget,
+  type RunTarget,
   runStage as runStageApi,
   setFindingStatus,
 } from '../lib/api';
@@ -13,23 +17,29 @@ import type {
   PageSummary,
   Project,
   RunSnapshot,
+  StageDef,
   StageId,
   StageProgress,
+  StageState,
 } from '../lib/types';
-import { formatDate, formatDuration } from '../lib/format';
+import { elapsedMs, formatClock, formatDate } from '../lib/format';
+import { QUIPS } from '../lib/quips';
+import { useNow } from '../lib/useNow';
 import { Crumb, PageHeader } from '../components/Shell';
 import { VerdictBanner } from '../components/Verdict';
-import { StagePipeline } from '../components/StagePipeline';
+import { StagePipeline, TaskList } from '../components/StagePipeline';
 import { FindingsList } from '../components/FindingsList';
 import {
   Button,
   Card,
+  CopyButton,
   EmptyState,
   Panel,
   ProgressBar,
   Spinner,
   Tabs,
   cn,
+  selectClass,
 } from '../components/ui';
 
 const RUNNING = new Set(['pending', 'running']);
@@ -45,6 +55,11 @@ export function RunPage() {
   const [tab, setTab] = useState('stages');
   const [busyStage, setBusyStage] = useState<StageId | null>(null);
   const [pages, setPages] = useState<PageSummary[]>([]);
+  const [stageDefs, setStageDefs] = useState<Record<string, StageDef>>({});
+  const [quip, setQuip] = useState(
+    () => QUIPS[Math.floor(Math.random() * QUIPS.length)],
+  );
+  const [target, setTarget] = useState<RunTarget | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -67,9 +82,48 @@ export function RunPage() {
   useEffect(() => {
     setLoading(true);
     load();
+    getStages()
+      .then((defs) =>
+        setStageDefs(Object.fromEntries(defs.map((d) => [d.id, d]))),
+      )
+      .catch(() => setStageDefs({}));
   }, [load]);
 
   const running = snapshot ? RUNNING.has(snapshot.run.status) : true;
+  const now = useNow(running);
+
+  // The reconnaissance artefact from the "Target & tools" stage.
+  useEffect(() => {
+    if (!snapshot) return;
+    let stopped = false;
+    getRunTarget(id, runId)
+      .then((value) => {
+        if (!stopped) setTarget(value);
+      })
+      .catch(() => {
+        if (!stopped) setTarget(null);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [snapshot, id, runId]);
+
+  // Rotate a loading quip while a long stage works.
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => {
+      setQuip((current) => {
+        let next = QUIPS[Math.floor(Math.random() * QUIPS.length)];
+        if (QUIPS.length > 1) {
+          while (next === current) {
+            next = QUIPS[Math.floor(Math.random() * QUIPS.length)];
+          }
+        }
+        return next;
+      });
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [running]);
 
   useEffect(() => {
     if (!running) return;
@@ -151,6 +205,7 @@ export function RunPage() {
     ['passed', 'findings', 'failed', 'skipped'].includes(s.status),
   ).length;
   const pct = Math.round((completed / Math.max(1, stages.length)) * 100);
+  const totalElapsed = elapsedMs(run.startedAt, run.finishedAt, now);
 
   return (
     <div className="animate-in space-y-6">
@@ -168,14 +223,20 @@ export function RunPage() {
         description={
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
             <span>{formatDate(run.startedAt)}</span>
-            {run.durationMs != null && (
-              <span>{formatDuration(run.durationMs)}</span>
+            {totalElapsed != null && (
+              <span className="font-mono">
+                {RUNNING.has(run.status) ? 'elapsed ' : 'took '}
+                {formatClock(totalElapsed)}
+              </span>
             )}
             <span className="capitalize">{run.status}</span>
           </span>
         }
         actions={
           <>
+            <Button variant="secondary" onClick={() => setTab('prompt')}>
+              AI prompt
+            </Button>
             <Button
               variant="secondary"
               onClick={() => navigate(`/projects/${id}/findings`)}
@@ -203,14 +264,36 @@ export function RunPage() {
         >
           <div className="mb-4">
             <ProgressBar value={pct} />
-            <p className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
-              {current
-                ? `${current.label} - ${progress?.message || 'working…'}`
-                : progress?.message || 'Starting…'}
+              {current ? current.label : 'Starting'}
+              <span className="text-muted">·</span>
+              <span className="truncate">
+                {progress?.message || 'working...'}
+              </span>
             </p>
+            <p className="mt-1.5 text-xs italic text-muted">{quip}</p>
           </div>
-          <StagePipeline stages={stages} runningStageId={current?.id} />
+
+          {current?.tasks && current.tasks.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-muted">
+                <span>Work items</span>
+                <span className="font-mono">
+                  {current.tasks.filter((t) => t.status === 'done').length}/
+                  {current.tasks.length} done
+                </span>
+              </div>
+              <TaskList tasks={current.tasks} />
+            </div>
+          )}
+
+          <StagePipeline
+            stages={stages}
+            defs={stageDefs}
+            runningStageId={current?.id}
+            now={now}
+          />
         </Panel>
       ) : (
         <VerdictBanner
@@ -229,19 +312,25 @@ export function RunPage() {
             ? [{ id: 'pages', label: 'Pages', count: pages.length || undefined }]
             : []),
           { id: 'actions', label: 'Next actions', count: nextActions.length },
+          { id: 'prompt', label: 'AI prompt' },
         ]}
       />
 
       {tab === 'stages' && (
-        <Panel bodyClassName="py-4">
-          <StagePipeline
-            stages={stages}
-            onRunStage={onRunStage}
-            onOpenStage={() => navigate(`/projects/${id}/findings`)}
-            busyStageId={busyStage}
-            runningStageId={current?.id}
-          />
-        </Panel>
+        <>
+          {target && <TargetSummary target={target} />}
+          <Panel bodyClassName="py-4">
+            <StagePipeline
+              stages={stages}
+              defs={stageDefs}
+              onRunStage={onRunStage}
+              onOpenStage={() => navigate(`/projects/${id}/findings`)}
+              busyStageId={busyStage}
+              runningStageId={current?.id}
+              now={now}
+            />
+          </Panel>
+        </>
       )}
 
       {tab === 'findings' && (
@@ -316,7 +405,159 @@ export function RunPage() {
           )}
         </Panel>
       )}
+
+      {tab === 'prompt' && (
+        <RunPromptPanel projectId={id} runId={runId} stages={stages} />
+      )}
     </div>
+  );
+}
+
+/** What the "Target & tools" stage resolved for this run. */
+function TargetSummary({ target }: { target: RunTarget }) {
+  const scanners = target.scanners ?? [];
+  return (
+    <Card className="mb-3 p-4">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+        Target &amp; tools
+        <span className="font-normal normal-case tracking-normal text-muted">
+          recorded by the first stage
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+        <div className="space-y-1">
+          {target.productionUrl && (
+            <Row label="Production" value={target.productionUrl} />
+          )}
+          {target.stagingUrl && <Row label="Staging" value={target.stagingUrl} />}
+          {target.codebasePath && <Row label="Repo" value={target.codebasePath} />}
+          {target.allowedHosts && target.allowedHosts.length > 0 && (
+            <Row label="Allowlist" value={target.allowedHosts.join(', ')} />
+          )}
+        </div>
+        <div className="space-y-1">
+          {target.projectName && <Row label="Project" value={target.projectName} />}
+          {target.stack && target.stack.length > 0 && (
+            <Row label="Stack" value={target.stack.join(' · ')} />
+          )}
+          <div className="flex gap-2">
+            <span className="w-20 shrink-0 text-muted">Scanners</span>
+            <span className="flex flex-wrap gap-1">
+              {scanners.length === 0 ? (
+                <span className="text-muted">not probed</span>
+              ) : (
+                scanners.map((s) => (
+                  <span
+                    key={s.id}
+                    title={s.version ?? undefined}
+                    className={cn(
+                      'rounded-md border px-1.5 py-0.5 font-mono text-[10px]',
+                      s.available
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                        : 'border-line bg-white/[0.03] text-muted',
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                ))
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="w-20 shrink-0 text-muted">{label}</span>
+      <span className="min-w-0 flex-1 truncate font-mono text-ink-soft" title={value}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function RunPromptPanel({
+  projectId,
+  runId,
+  stages,
+}: {
+  projectId: string;
+  runId: string;
+  stages: StageState[];
+}) {
+  const [scope, setScope] = useState('all');
+  const [prompt, setPrompt] = useState('');
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let stopped = false;
+    setBusy(true);
+    setError(null);
+    getRunPrompt(projectId, runId, scope === 'all' ? {} : { stage: scope as StageId })
+      .then((text) => {
+        if (!stopped) setPrompt(text);
+      })
+      .catch((err) => {
+        if (!stopped) {
+          setError(err instanceof Error ? err.message : 'Could not build prompt.');
+        }
+      })
+      .finally(() => {
+        if (!stopped) setBusy(false);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [projectId, runId, scope]);
+
+  const withFindings = stages.filter((s) => s.findings > 0);
+
+  return (
+    <Panel
+      title="Full-run AI prompt"
+      action={
+        <div className="flex items-center gap-2">
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
+            className={cn(
+              selectClass,
+              'rounded-lg bg-black/30 px-3 py-1.5 text-xs',
+            )}
+          >
+            <option value="all">All findings</option>
+            {withFindings.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label} ({s.findings})
+              </option>
+            ))}
+          </select>
+          <CopyButton text={prompt} label="Copy prompt" />
+        </div>
+      }
+    >
+      <p className="mb-3 text-xs text-muted">
+        A single, evidence-rich brief covering every finding in scope - hand it to
+        any coding agent. Each finding includes its blast radius, raw tool
+        evidence and suggested direction.
+      </p>
+      {busy ? (
+        <div className="flex items-center gap-2 py-8 text-sm text-muted">
+          <Spinner /> Building prompt...
+        </div>
+      ) : error ? (
+        <p className="text-sm text-rose-300">{error}</p>
+      ) : (
+        <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-4 text-[11px] leading-relaxed text-ink-soft">
+          {prompt}
+        </pre>
+      )}
+    </Panel>
   );
 }
 

@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getProject, setFindingStatus } from '../lib/api';
-import type {
-  Finding,
-  FindingStatus,
-  ProjectSnapshot,
-} from '../lib/types';
+import { getFindingPrompt, getProject, setFindingStatus } from '../lib/api';
+import type { FindingStatus, ProjectSnapshot } from '../lib/types';
 import { SOURCE_LABELS } from '../lib/types';
 import { Crumb, PageHeader } from '../components/Shell';
 import {
@@ -35,6 +31,8 @@ export function FindingPage() {
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState('');
+  const [promptBusy, setPromptBusy] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -51,6 +49,28 @@ export function FindingPage() {
     setLoading(true);
     load();
   }, [load]);
+
+  // Ask the server for an evidence-rich prompt rather than assembling one here.
+  useEffect(() => {
+    if (!snapshot) return;
+    const found = snapshot.findings.find((f) => f.id === decoded);
+    if (!found) return;
+    let stopped = false;
+    setPromptBusy(true);
+    getFindingPrompt(id, found.id)
+      .then((text) => {
+        if (!stopped) setPrompt(text);
+      })
+      .catch(() => {
+        if (!stopped) setPrompt('');
+      })
+      .finally(() => {
+        if (!stopped) setPromptBusy(false);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [snapshot, id, decoded]);
 
   if (loading) {
     return (
@@ -84,7 +104,6 @@ export function FindingPage() {
     );
   }
 
-  const prompt = buildPrompt(snapshot.project.name, finding);
   const codebasePath = snapshot.project.targets.codebasePath;
 
   return (
@@ -109,7 +128,7 @@ export function FindingPage() {
         }
         actions={
           <>
-            <CopyButton text={prompt} label="Copy AI prompt" />
+            <CopyButton text={prompt} label="Copy AI prompt" disabled={!prompt} />
             {codebasePath && (
               <select
                 value={finding.status}
@@ -151,6 +170,29 @@ export function FindingPage() {
                 'Investigate the evidence and remediate the underlying cause.'}
             </p>
           </Panel>
+
+          {finding.context && finding.context.length > 0 && (
+            <Panel title="Context">
+              <dl className="space-y-2.5 text-sm">
+                {finding.context.map((entry) => (
+                  <div key={entry.label}>
+                    <dt className="text-xs uppercase tracking-wide text-muted">
+                      {entry.label}
+                    </dt>
+                    <dd className="mt-0.5 text-ink-soft">{entry.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Panel>
+          )}
+
+          {finding.details && finding.details.length > 0 && (
+            <Panel title="Raw tool evidence">
+              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-3.5 text-[11px] leading-relaxed text-ink-soft">
+                {JSON.stringify(finding.details, null, 2)}
+              </pre>
+            </Panel>
+          )}
 
           {(finding.affectedFiles && finding.affectedFiles.length > 0) ||
           (finding.affectedPages && finding.affectedPages.length > 0) ? (
@@ -233,10 +275,19 @@ export function FindingPage() {
             </dl>
           </Panel>
 
-          <Panel title="AI prompt">
-            <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-3.5 text-[11px] leading-relaxed text-ink-soft">
-              {prompt}
-            </pre>
+          <Panel
+            title="AI prompt"
+            action={<CopyButton text={prompt} label="Copy" />}
+          >
+            {promptBusy ? (
+              <div className="flex items-center gap-2 py-6 text-sm text-muted">
+                <Spinner /> Building prompt...
+              </div>
+            ) : (
+              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-3.5 text-[11px] leading-relaxed text-ink-soft">
+                {prompt || 'No prompt available for this finding.'}
+              </pre>
+            )}
           </Panel>
         </div>
       </div>
@@ -268,28 +319,4 @@ function Row({
   );
 }
 
-function buildPrompt(projectName: string, finding: Finding): string {
-  return [
-    `# Fix request - ${projectName}`,
-    '',
-    `Finding ${finding.id} (${finding.severity}, ${finding.confidence} confidence, ${finding.source}).`,
-    '',
-    `## Issue`,
-    finding.title,
-    '',
-    finding.description,
-    '',
-    `## Evidence`,
-    finding.evidence.file
-      ? `- ${finding.evidence.file}${finding.evidence.line ? `:${finding.evidence.line}` : ''}`
-      : finding.evidence.url
-        ? `- ${finding.evidence.url}`
-        : '- see finding',
-    '',
-    `## Suggested direction`,
-    finding.recommendation ?? 'Investigate and remediate the underlying cause.',
-    '',
-    `## Task`,
-    `Fix this finding with the smallest safe change. Explain the root cause, show the diff, and note any tests to add.`,
-  ].join('\n');
-}
+

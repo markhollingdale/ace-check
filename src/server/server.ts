@@ -55,6 +55,7 @@ import {
 } from '../audit/lifecycle.js';
 import { aiConfigFromEnv, runAiReview } from '../audit/ai-runner.js';
 import type {
+  FindingSource,
   Project,
   Run,
   ScannerDescriptor,
@@ -81,10 +82,15 @@ import {
   planRun,
   projectStagePlan,
 } from '../audit/stages/runner.js';
-import { RUN_PROFILES, runProfileById } from '../audit/stages/catalog.js';
+import {
+  RUN_PROFILES,
+  STAGE_CATALOG,
+  runProfileById,
+} from '../audit/stages/catalog.js';
 import { listScannerDescriptors } from '../audit/scanners/registry.js';
 import { buildReleaseGate } from '../audit/gate.js';
 import { buildNextActions } from '../audit/next-actions.js';
+import { generateFindingPrompt, generateRunPrompt } from '../audit/ai-prompts.js';
 import { dataPaths } from '../paths.js';
 
 interface ScanState {
@@ -196,6 +202,22 @@ app.get('/api/scanners', async (c) => {
 });
 
 app.get('/api/run-profiles', (c) => c.json({ profiles: RUN_PROFILES }));
+
+app.get('/api/stages', (c) =>
+  c.json({
+    stages: STAGE_CATALOG.map((s) => ({
+      id: s.id,
+      order: s.order,
+      label: s.label,
+      short: s.short,
+      source: s.source,
+      description: s.description,
+      requires: s.requires,
+      tools: s.tools,
+      output: s.output,
+    })),
+  }),
+);
 
 // Projects -------------------------------------------------------------
 
@@ -525,6 +547,61 @@ app.get('/api/projects/:id/next-actions', async (c) => {
   const run = await latestRun(project.id);
   const findings = await activeFindings(project, run?.id);
   return c.json({ nextActions: buildNextActions(findings) });
+});
+
+/** The reconnaissance artefact written by the "Target & tools" stage. */
+app.get('/api/projects/:id/runs/:runId/target', async (c) => {
+  const raw = await readRunReport(
+    c.req.param('id'),
+    c.req.param('runId'),
+    'target.json',
+  );
+  if (!raw) return c.json({ target: null });
+  try {
+    return c.json({ target: JSON.parse(raw) });
+  } catch {
+    return c.json({ target: null });
+  }
+});
+
+app.post('/api/projects/:id/findings/:findingId/prompt', async (c) => {
+  const project = await readProject(c.req.param('id'));
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const run = await latestRun(project.id);
+  const findings = await activeFindings(project, run?.id);
+  const finding = findings.find((f) => f.id === c.req.param('findingId'));
+  if (!finding) return c.json({ error: 'Finding not found' }, 404);
+  c.header('Content-Type', 'text/markdown; charset=utf-8');
+  return c.text(
+    generateFindingPrompt({ projectName: project.name, finding, run }),
+  );
+});
+
+app.post('/api/projects/:id/runs/:runId/prompt', async (c) => {
+  const projectId = c.req.param('id');
+  const project = await readProject(projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+  const run = await readRun(projectId, c.req.param('runId'));
+  if (!run) return c.json({ error: 'Run not found' }, 404);
+  const body = await c.req.json().catch(() => ({}));
+  const stage = typeof body?.stage === 'string' ? (body.stage as StageId) : undefined;
+  const source =
+    typeof body?.source === 'string' ? (body.source as FindingSource) : undefined;
+
+  const findings = await activeFindings(project, run.id);
+  const webSummary = run.webScanId ? await readSummary(run.webScanId) : null;
+
+  c.header('Content-Type', 'text/markdown; charset=utf-8');
+  return c.text(
+    generateRunPrompt({
+      projectName: project.name,
+      run,
+      findings,
+      stage,
+      source,
+      webSummary,
+    }),
+  );
 });
 
 // AI reviews -----------------------------------------------------------

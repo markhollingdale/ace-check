@@ -30,6 +30,31 @@ export function formatDuration(ms: number | undefined): string {
   return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
 }
 
+/** mm:ss (or h:mm:ss) clock for live timers. */
+export function formatClock(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+/** Elapsed time between two ISO timestamps, or up to `now` if still running. */
+export function elapsedMs(
+  startedAt?: string,
+  finishedAt?: string,
+  now: number = Date.now(),
+): number | undefined {
+  if (!startedAt) return undefined;
+  const start = Date.parse(startedAt);
+  if (Number.isNaN(start)) return undefined;
+  const end = finishedAt ? Date.parse(finishedAt) : now;
+  if (Number.isNaN(end)) return undefined;
+  return Math.max(0, end - start);
+}
+
 export function scoreTone(score: number | null | undefined): string {
   if (score == null) return 'text-slate-500';
   if (score >= 90) return 'text-emerald-600';

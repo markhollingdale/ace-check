@@ -264,6 +264,8 @@ export interface Finding {
   affectedPages?: string[];
   affectedFiles?: string[];
   status: FindingStatus;
+  context?: { label: string; value: string }[];
+  details?: Record<string, unknown>[];
 }
 
 export interface ReviewModule {
@@ -365,6 +367,14 @@ export interface StageRequirement {
   binaries?: string[];
 }
 
+export type StageTaskStatus = 'pending' | 'running' | 'done' | 'failed';
+
+export interface StageTask {
+  key: string;
+  label: string;
+  status: StageTaskStatus;
+}
+
 export interface StageState {
   id: StageId;
   label: string;
@@ -378,6 +388,19 @@ export interface StageState {
   error?: string;
   message?: string;
   artifacts?: string[];
+  tasks?: StageTask[];
+}
+
+export interface StageDef {
+  id: StageId;
+  order: number;
+  label: string;
+  short: string;
+  source: FindingSource;
+  description: string;
+  requires: StageRequirement;
+  tools: string[];
+  output: string;
 }
 
 export type RunStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled';
