@@ -266,6 +266,8 @@ export interface Finding {
   status: FindingStatus;
   context?: { label: string; value: string }[];
   details?: Record<string, unknown>[];
+  detailsSummary?: string[];
+  links?: { label: string; href: string }[];
 }
 
 export interface ReviewModule {

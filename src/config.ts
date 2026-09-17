@@ -60,6 +60,7 @@ export function defaultConfig(overrides: Partial<ScanConfig> = {}): ScanConfig {
     includeSitemap: true,
     includeLinks: true,
     ignoredQueryParams: [...DEFAULT_IGNORED_QUERY_PARAMS],
+    lighthouseHtml: 'findings',
     ...loadConfigFile(),
     ...clean,
   };

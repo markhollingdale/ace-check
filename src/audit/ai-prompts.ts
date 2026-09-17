@@ -96,7 +96,14 @@ export function findingBlock(finding: Finding, index: number): string {
     lines.push(finding.description.trim());
   }
 
-  if (finding.details && finding.details.length > 0) {
+  if (finding.detailsSummary && finding.detailsSummary.length > 0) {
+    lines.push('');
+    lines.push(
+      'Evidence (the specific elements, resources or tasks the tool flagged):',
+    );
+    lines.push('');
+    for (const line of finding.detailsSummary) lines.push(`- ${line}`);
+  } else if (finding.details && finding.details.length > 0) {
     lines.push('');
     lines.push('Raw tool evidence:');
     lines.push('');

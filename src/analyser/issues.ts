@@ -86,7 +86,15 @@ export function buildIssue(group: GroupedIssue, totalPages: number): Issue {
     unitHint: unitHintForAudit(first.auditId),
   });
 
-  const examples = entries.slice(0, 5).flatMap((e) => e.issue.items.slice(0, 2));
+  // Attach the source page to every evidence item so the evidence can be tied
+  // back to the pages in the blast radius, rather than being an anonymous dump.
+  const examples = entries.slice(0, 5).flatMap((e) =>
+    e.issue.items.slice(0, 4).map((item) => ({
+      page: e.page.url,
+      device: e.page.device,
+      ...item,
+    })),
+  );
 
   const templateNames = affectedTemplates
     .slice(0, 3)

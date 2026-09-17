@@ -124,6 +124,77 @@ export function extractMetrics(lhr: unknown): PageMetrics {
 
 const MAX_ITEMS = 20;
 
+/**
+ * Metric audits (TBT, LCP, CLS, FCP, speed index) carry a score but no
+ * `details.items` - the actual evidence lives in sibling audits. When an audit
+ * has no items of its own, borrow the top items from these related audits so a
+ * finding can still point at the specific culprits.
+ */
+const SUPPORTING_AUDITS: Record<string, string[]> = {
+  'total-blocking-time': [
+    'mainthread-work-breakdown',
+    'bootup-time',
+    'long-tasks',
+  ],
+  'max-potential-fid': ['long-tasks', 'bootup-time'],
+  interactive: ['mainthread-work-breakdown', 'bootup-time'],
+  'largest-contentful-paint': [
+    'lcp-breakdown-insight',
+    'lcp-discovery-insight',
+    'largest-contentful-paint-element',
+    'image-delivery-insight',
+    'render-blocking-insight',
+  ],
+  'first-contentful-paint': [
+    'render-blocking-insight',
+    'document-latency-insight',
+    'network-dependency-tree-insight',
+  ],
+  'speed-index': [
+    'render-blocking-insight',
+    'unused-javascript',
+    'unused-css-rules',
+  ],
+  'cumulative-layout-shift': ['cls-culprits-insight', 'layout-shifts'],
+  'total-byte-weight': [
+    'resource-summary',
+    'third-parties-insight',
+    'duplicated-javascript-insight',
+    'network-requests',
+  ],
+  'unused-javascript': [
+    'duplicated-javascript-insight',
+    'legacy-javascript-insight',
+  ],
+  'unused-css-rules': ['render-blocking-insight'],
+  'uses-long-cache-ttl': ['cache-insight'],
+  'dom-size': ['dom-size-insight'],
+  'modern-image-formats': ['image-delivery-insight'],
+  'uses-optimized-images': ['image-delivery-insight'],
+  'uses-responsive-images': ['image-delivery-insight'],
+  'font-display': ['font-display-insight'],
+  'third-party-summary': ['third-parties-insight'],
+};
+
+function supportingItems(
+  audits: Record<string, LhrAudit>,
+  auditId: string,
+): Record<string, unknown>[] {
+  const related = SUPPORTING_AUDITS[auditId];
+  if (!related) return [];
+  const items: Record<string, unknown>[] = [];
+  for (const id of related) {
+    const audit = audits[id];
+    const raw = audit?.details?.items;
+    if (!Array.isArray(raw)) continue;
+    for (const item of raw.slice(0, 4)) {
+      items.push({ ...item, via: id });
+    }
+    if (items.length >= MAX_ITEMS) break;
+  }
+  return items.slice(0, MAX_ITEMS);
+}
+
 export function extractIssues(lhr: unknown): PageIssue[] {
   const data = lhr as Lhr;
   if (!data.audits) return [];
@@ -142,7 +213,11 @@ export function extractIssues(lhr: unknown): PageIssue[] {
     // a plain object in details.items rather than an array. Guard against that
     // so a passing/failing checklist audit cannot crash page summarisation.
     const rawItems = audit.details?.items;
-    const items = Array.isArray(rawItems) ? rawItems : [];
+    const ownItems = Array.isArray(rawItems) ? rawItems : [];
+    // Metric audits have no items of their own; borrow the culprits so the
+    // finding has evidence that points at something concrete.
+    const items =
+      ownItems.length > 0 ? ownItems : supportingItems(data.audits, auditId);
     const capped = items.slice(0, MAX_ITEMS);
 
     issues.push({

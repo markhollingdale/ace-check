@@ -175,6 +175,21 @@ body::before {
     background-size: 200% 100%;
     animation: shimmer 1.4s linear infinite;
   }
+  /* A slow diagonal sweep across loading text, brightening then fading. */
+  .text-shimmer {
+    background: linear-gradient(
+      100deg,
+      rgba(133, 141, 163, 0.75) 0%,
+      rgba(232, 235, 245, 1) 42%,
+      rgba(167, 139, 250, 0.95) 52%,
+      rgba(133, 141, 163, 0.75) 90%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: text-sweep 9s linear infinite;
+  }
   .animate-in {
     animation: fade-up 0.35s ease both;
   }
@@ -198,6 +213,18 @@ body::before {
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+@keyframes text-sweep {
+  0% {
+    background-position: 160% 0;
+  }
+  60% {
+    background-position: -60% 0;
+  }
+  100% {
+    background-position: -60% 0;
   }
 }
 

@@ -30,7 +30,9 @@ export async function buildRelease(opts: {
   const staticFindings = codebasePath ? await runCodeChecks(codebasePath) : [];
   const reviewFindings = codebasePath ? readReviewFindings(codebasePath) : [];
   const webIssues = scanId ? await readIssues(scanId) : null;
-  const webFindings = (webIssues ?? []).map(issueToFinding);
+  const webFindings = (webIssues ?? []).map((issue) =>
+    issueToFinding(issue, { scanId: scanId || undefined }),
+  );
   const statuses = codebasePath ? readFindingStatuses(codebasePath) : {};
   const allFindings = [...staticFindings, ...reviewFindings, ...webFindings].map(
     (f) => ({ ...f, status: statuses[f.id] ?? f.status }),

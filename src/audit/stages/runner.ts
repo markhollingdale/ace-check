@@ -313,13 +313,17 @@ async function runWebQualityStage(
       onProgress: (u) => {
         const tasks = toTasks(u.items);
         const total = tasks?.length ?? 0;
-        const done = tasks?.filter(
-          (t) => t.status === 'done' || t.status === 'failed',
-        ).length ?? 0;
+        // Show the item being worked on now, not the number already finished.
+        const runningIndex = tasks?.findIndex((t) => t.status === 'running') ?? -1;
+        const finished =
+          tasks?.filter((t) => t.status === 'done' || t.status === 'failed')
+            .length ?? 0;
+        const position =
+          runningIndex >= 0 ? runningIndex + 1 : Math.min(finished + 1, total);
         const message = u.message
           ? u.message
           : u.currentUrl
-            ? `Lighthouse (${done}/${total}) ${shortUrl(u.currentUrl)}`
+            ? `Lighthouse ${position} of ${total} - ${shortUrl(u.currentUrl)}`
             : `Lighthouse across ${total} page run(s)`;
         emit(message, tasks);
       },
@@ -328,7 +332,7 @@ async function runWebQualityStage(
     runId,
   );
   const issues = (await readIssues(runId)) ?? [];
-  return issues.map(issueToFinding);
+  return issues.map((issue) => issueToFinding(issue, { scanId: runId }));
 }
 
 async function runDynamicStage(
@@ -578,6 +582,33 @@ export async function executeRun(
       run.status === 'done' ? 'Run complete' : `Run ${run.status}`;
     notify(run, last, callbacks);
   }
+  return run;
+}
+
+/**
+ * Replace a stage's findings with a recomputed set (e.g. after re-analysing
+ * stored evidence), then rebuild the verdict so the gate and reports match.
+ */
+export async function replaceStageFindings(
+  project: Project,
+  run: Run,
+  stageId: StageId,
+  findings: Finding[],
+): Promise<Run> {
+  const tagged = findings.map((f) => ({ ...f, stage: f.stage ?? stageId }));
+  await writeStageFindings(project.id, run.id, stageId, tagged);
+
+  const stage = run.stages.find((s) => s.id === stageId);
+  if (stage) {
+    stage.severityCounts = severityCountsFor(tagged);
+    stage.findings = tagged.length;
+    stage.status = statusFor(tagged, true);
+    stage.finishedAt = new Date().toISOString();
+    stage.message = `Rebuilt from stored evidence (${tagged.length} findings)`;
+  }
+  await writeRun(run);
+
+  await executeSingleStage(project, run, 'verdict');
   return run;
 }
 

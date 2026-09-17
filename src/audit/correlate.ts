@@ -1,4 +1,5 @@
 import type { Finding, Issue } from '../types.js';
+import { summariseEvidenceItems } from './evidence.js';
 
 export const CORRELATION_KEYS = {
   performance: 'performance',
@@ -47,7 +48,10 @@ export function correlationKeysForIssue(issue: Issue): string[] {
   return [...keys];
 }
 
-export function issueToFinding(issue: Issue): Finding {
+export function issueToFinding(
+  issue: Issue,
+  opts: { scanId?: string } = {},
+): Finding {
   const context: { label: string; value: string }[] = [
     { label: 'Affected pages', value: `${issue.count} / ${issue.totalPages}` },
   ];
@@ -75,6 +79,20 @@ export function issueToFinding(issue: Issue): Finding {
   context.push({ label: 'Likely common cause', value: issue.likelyCommonCause });
 
   const samplePages = issue.affectedUrls.slice(0, 5);
+  const evidence = issue.examples.slice(0, 12);
+
+  // `affectedPages` holds the stored page slugs, which is what the Lighthouse
+  // report routes are keyed by. Link the first few so a finding points at the
+  // exact report section for the pages it affects.
+  const links: { label: string; href: string }[] = [];
+  if (opts.scanId) {
+    for (const slug of issue.affectedPages.slice(0, 5)) {
+      links.push({
+        label: `Lighthouse report - ${slug}`,
+        href: `/api/scans/${opts.scanId}/pages/${slug}/report.html`,
+      });
+    }
+  }
 
   return {
     id: issue.id,
@@ -100,7 +118,10 @@ export function issueToFinding(issue: Issue): Finding {
     affectedPages: issue.affectedUrls,
     status: 'detected',
     context,
-    details: issue.examples.slice(0, 8),
+    details: evidence.length > 0 ? evidence : undefined,
+    detailsSummary:
+      evidence.length > 0 ? summariseEvidenceItems(evidence) : undefined,
+    links: links.length > 0 ? links : undefined,
   };
 }
 

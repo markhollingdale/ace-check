@@ -30,6 +30,11 @@ export interface ScanConfig {
   includeLinks: boolean;
   ignoredQueryParams: string[];
   userAgent?: string;
+  /**
+   * Whether to keep Lighthouse's own HTML report per page. These are large
+   * (~400 KB each), so the default keeps them only where there are findings.
+   */
+  lighthouseHtml?: 'never' | 'findings' | 'always';
 }
 
 export interface PageScores {
@@ -280,6 +285,10 @@ export interface Finding {
   context?: { label: string; value: string }[];
   /** Raw evidence items captured from the underlying tool, for prompts and detail views. */
   details?: Record<string, unknown>[];
+  /** One readable line per evidence item, generated from `details`. */
+  detailsSummary?: string[];
+  /** Direct links to supporting evidence (e.g. the Lighthouse report for a page). */
+  links?: { label: string; href: string }[];
 }
 
 export interface DomainVerdict {

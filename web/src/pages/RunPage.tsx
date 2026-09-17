@@ -6,6 +6,7 @@ import {
   getRunPrompt,
   getPages,
   getProject,
+  cancelRun,
   getStages,
   getRunTarget,
   type RunTarget,
@@ -60,6 +61,7 @@ export function RunPage() {
     () => QUIPS[Math.floor(Math.random() * QUIPS.length)],
   );
   const [target, setTarget] = useState<RunTarget | null>(null);
+  const [aborting, setAborting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -121,7 +123,7 @@ export function RunPage() {
         }
         return next;
       });
-    }, 4500);
+    }, 10_000);
     return () => clearInterval(timer);
   }, [running]);
 
@@ -152,6 +154,18 @@ export function RunPage() {
     if (!project?.targets.codebasePath) return;
     await setFindingStatus(project.targets.codebasePath, findingId, status);
     await load();
+  };
+
+  const onAbort = async () => {
+    if (!confirm('Abort this run? Stages already completed are kept.')) return;
+    setAborting(true);
+    try {
+      await cancelRun(id, runId);
+    } catch {
+      /* the run may have finished between click and request */
+    } finally {
+      setAborting(false);
+    }
   };
 
   const onRunStage = async (stageId: StageId) => {
@@ -257,9 +271,20 @@ export function RunPage() {
         <Panel
           title="Audit in progress"
           action={
-            <span className="text-xs text-muted">
-              {completed}/{stages.length} stages
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted">
+                {completed}/{stages.length} stages ·{' '}
+                {formatClock(totalElapsed ?? 0)}
+              </span>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={onAbort}
+                disabled={aborting}
+              >
+                {aborting ? 'Aborting...' : 'Abort run'}
+              </Button>
+            </div>
           }
         >
           <div className="mb-4">
@@ -272,7 +297,7 @@ export function RunPage() {
                 {progress?.message || 'working...'}
               </span>
             </p>
-            <p className="mt-1.5 text-xs italic text-muted">{quip}</p>
+            <p className="text-shimmer mt-2 text-xs font-medium">{quip}</p>
           </div>
 
           {current?.tasks && current.tasks.length > 0 && (
@@ -288,12 +313,17 @@ export function RunPage() {
             </div>
           )}
 
-          <StagePipeline
-            stages={stages}
-            defs={stageDefs}
-            runningStageId={current?.id}
-            now={now}
-          />
+          <p className="text-xs text-muted">
+            Full stage detail is in the{' '}
+            <button
+              type="button"
+              onClick={() => setTab('stages')}
+              className="text-accent hover:underline cursor-pointer"
+            >
+              Stages
+            </button>{' '}
+            tab below.
+          </p>
         </Panel>
       ) : (
         <VerdictBanner

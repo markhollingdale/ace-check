@@ -494,7 +494,16 @@ async function runSinglePage(
       }
 
       const parsed = parseLighthouse(outcome.lhr);
-      if (outcome.html) await writeHtmlReport(scanId, slug, outcome.html);
+      // Lighthouse HTML reports are large (~400 KB/page). Keep them according
+      // to config, defaulting to only the pages that have findings.
+      const htmlMode = config.lighthouseHtml ?? 'findings';
+      const keepHtml =
+        !!outcome.html &&
+        (htmlMode === 'always' ||
+          (htmlMode === 'findings' && parsed.issues.length > 0));
+      if (keepHtml && outcome.html) {
+        await writeHtmlReport(scanId, slug, outcome.html);
+      }
 
       page = {
         slug,
@@ -507,7 +516,7 @@ async function runSinglePage(
         status: 'ok',
         timestamp: new Date().toISOString(),
         hasLighthouseJson: true,
-        hasHtmlReport: !!outcome.html,
+        hasHtmlReport: keepHtml,
       };
     } catch (err) {
       const classified = err as LighthouseError;

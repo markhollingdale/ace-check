@@ -41,7 +41,9 @@ function lighthouseFlags(device: Device, port: number): Flags {
   const isMobile = device === 'mobile';
   return {
     port,
-    output: 'json',
+    // JSON is our source of truth; the HTML report is kept so findings can link
+    // straight to the relevant audit section (the report anchors by audit id).
+    output: ['json', 'html'],
     logLevel: 'error',
     onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
     formFactor: isMobile ? 'mobile' : 'desktop',
@@ -105,10 +107,15 @@ export class LighthouseRunner {
       } as LighthouseError;
     }
 
+    // With output: ['json', 'html'] the reports come back in that order, but
+    // detect the HTML by content so a flag change cannot silently break this.
+    const reports = Array.isArray(runnerResult.report)
+      ? runnerResult.report
+      : [runnerResult.report];
     const html =
-      Array.isArray(runnerResult.report) && runnerResult.report.length > 0
-        ? runnerResult.report[0]
-        : null;
+      reports.find(
+        (r) => typeof r === 'string' && r.trimStart().startsWith('<'),
+      ) ?? null;
 
     return { lhr: runnerResult.lhr, html };
   }

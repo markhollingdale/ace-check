@@ -186,11 +186,63 @@ export function FindingPage() {
             </Panel>
           )}
 
-          {finding.details && finding.details.length > 0 && (
-            <Panel title="Raw tool evidence">
-              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-3.5 text-[11px] leading-relaxed text-ink-soft">
-                {JSON.stringify(finding.details, null, 2)}
-              </pre>
+          {finding.links && finding.links.length > 0 && (
+            <Panel title="Targeted reports">
+              <p className="mb-2 text-xs text-muted">
+                The Lighthouse report for each affected page. Each report contains
+                the audit that produced this finding.
+              </p>
+              <ul className="space-y-1.5">
+                {finding.links.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-line bg-white/[0.02] px-3 py-2 text-sm text-ink-soft transition-colors hover:bg-white/[0.06] hover:text-ink"
+                    >
+                      <span className="truncate">{link.label}</span>
+                      <span className="shrink-0 text-accent">open</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+
+          {finding.detailsSummary && finding.detailsSummary.length > 0 && (
+            <Panel
+              title={
+                finding.source === 'web'
+                  ? 'Lighthouse evidence'
+                  : 'Tool evidence'
+              }
+            >
+              <p className="mb-2 text-xs text-muted">
+                The specific elements, resources or tasks the tool flagged for
+                this issue.
+              </p>
+              <ul className="space-y-1.5">
+                {finding.detailsSummary.map((line, index) => (
+                  <li
+                    key={`${index}-${line.slice(0, 24)}`}
+                    className="rounded-lg border border-line bg-black/20 px-3 py-2 font-mono text-[11px] leading-relaxed text-ink-soft"
+                  >
+                    {line}
+                  </li>
+                ))}
+              </ul>
+
+              {finding.details && finding.details.length > 0 && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-muted hover:text-ink-soft">
+                    Raw items ({finding.details.length})
+                  </summary>
+                  <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-black/30 p-3.5 text-[11px] leading-relaxed text-ink-soft">
+                    {JSON.stringify(finding.details, null, 2)}
+                  </pre>
+                </details>
+              )}
             </Panel>
           )}
 

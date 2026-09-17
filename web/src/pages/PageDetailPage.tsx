@@ -87,14 +87,16 @@ export function PageDetailPage() {
         }
         actions={
           <>
-            <a
-              href={lighthouseHtmlUrl(runId, page.slug)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center rounded-xl border border-line bg-white/[0.04] px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-white/[0.09]"
-            >
-              Lighthouse report
-            </a>
+            {page.hasHtmlReport && (
+              <a
+                href={lighthouseHtmlUrl(runId, page.slug)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-xl border border-line bg-white/[0.04] px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-white/[0.09]"
+              >
+                Lighthouse report
+              </a>
+            )}
             <a
               href={lighthouseJsonUrl(runId, page.slug)}
               target="_blank"
