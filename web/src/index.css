@@ -40,6 +40,26 @@ body,
   height: 100%;
 }
 
+/*
+ * Render native controls (select popups, scrollbars, date pickers, spinners)
+ * in dark mode. Without this the closed <select> is styled but the open list
+ * is painted by the OS in light colours, which flashes white over the dark UI.
+ */
+:root {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: #0b1020;
+  color: #e8ebf5;
+}
+
+select:not([multiple]) option:checked {
+  background-color: #1c2540;
+  color: #ffffff;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--color-canvas);

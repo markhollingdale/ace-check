@@ -24,6 +24,8 @@ import {
   Panel,
   SeverityBadge,
   Spinner,
+  cn,
+  selectClass,
 } from '../components/ui';
 
 export function ReviewPage() {
@@ -160,7 +162,7 @@ export function ReviewPage() {
             <select
               value={profile}
               onChange={(e) => setProfile(e.target.value)}
-              className="rounded-lg border border-line bg-black/30 px-3 py-2 text-sm text-ink-soft outline-none focus:border-accent/60"
+              className={cn(selectClass, 'rounded-lg bg-black/30 px-3 py-2 text-sm')}
             >
               {profiles.map((p) => (
                 <option key={p.id} value={p.id}>

@@ -10,7 +10,7 @@ import type {
 import { SEVERITY_LABELS, SOURCE_LABELS } from '../lib/types';
 import { Crumb, PageHeader } from '../components/Shell';
 import { FindingsList } from '../components/FindingsList';
-import { Card, Spinner, cn } from '../components/ui';
+import { Card, Spinner, cn, selectClass } from '../components/ui';
 
 const SEVERITY_ORDER: Record<string, number> = {
   critical: 0,
@@ -192,9 +192,7 @@ function Filter({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={cn(
-        'rounded-xl border border-line bg-black/30 px-3 py-2 text-sm text-ink-soft outline-none focus:border-accent/60',
-      )}
+      className={cn(selectClass, 'rounded-xl bg-black/30 px-3 py-2 text-sm')}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>

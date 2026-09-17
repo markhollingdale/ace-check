@@ -17,6 +17,8 @@ import {
   SeverityBadge,
   SourceTag,
   Spinner,
+  cn,
+  selectClass,
 } from '../components/ui';
 
 const STATUSES: FindingStatus[] = [
@@ -119,7 +121,10 @@ export function FindingPage() {
                   );
                   await load();
                 }}
-                className="rounded-xl border border-line bg-black/40 px-3 py-2 text-sm text-ink-soft capitalize outline-none focus:border-accent/60"
+                className={cn(
+                  selectClass,
+                  'rounded-xl bg-black/40 px-3 py-2 text-sm capitalize',
+                )}
               >
                 {STATUSES.map((s) => (
                   <option key={s} value={s}>

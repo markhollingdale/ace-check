@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { Finding, FindingStatus } from '../lib/types';
-import { SeverityBadge, SourceTag, EmptyState, cn } from './ui';
+import {
+  SeverityBadge,
+  SourceTag,
+  EmptyState,
+  cn,
+  selectClass,
+} from './ui';
 
 const STATUS_OPTIONS: { value: FindingStatus; label: string }[] = [
   { value: 'detected', label: 'Detected' },
@@ -79,7 +85,8 @@ export function FindingsList({
                 onStatusChange(f.id, e.target.value as FindingStatus)
               }
               className={cn(
-                'shrink-0 rounded-lg border border-line bg-black/40 px-2 py-1.5 text-xs text-ink-soft outline-none focus:border-accent/60',
+                selectClass,
+                'shrink-0 rounded-lg bg-black/40 px-2 py-1.5 text-xs',
                 f.status === 'fixed' || f.status === 'verified'
                   ? 'text-emerald-300'
                   : undefined,

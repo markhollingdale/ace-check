@@ -12,6 +12,7 @@ import {
   SeverityBadge,
   Spinner,
   cn,
+  selectClass,
 } from '../components/ui';
 
 export function ComparePage() {
@@ -106,7 +107,7 @@ export function ComparePage() {
             <select
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
-              className="rounded-xl border border-line bg-black/30 px-3 py-2 text-sm text-ink-soft outline-none focus:border-accent/60"
+              className={cn(selectClass, 'rounded-xl bg-black/30 px-3 py-2 text-sm')}
             >
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -119,7 +120,7 @@ export function ComparePage() {
             <select
               value={previous}
               onChange={(e) => setPrevious(e.target.value)}
-              className="rounded-xl border border-line bg-black/30 px-3 py-2 text-sm text-ink-soft outline-none focus:border-accent/60"
+              className={cn(selectClass, 'rounded-xl bg-black/30 px-3 py-2 text-sm')}
             >
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>

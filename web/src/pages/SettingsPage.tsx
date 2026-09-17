@@ -15,6 +15,8 @@ import {
   HelpTip,
   Panel,
   Spinner,
+  cn,
+  selectClass,
 } from '../components/ui';
 
 const inputClass =
@@ -208,7 +210,7 @@ export function SettingsPage() {
                 id="s-profile"
                 value={profileId}
                 onChange={(e) => setProfileId(e.target.value)}
-                className={inputClass}
+                className={cn(inputClass, selectClass)}
               >
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>

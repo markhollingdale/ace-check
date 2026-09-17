@@ -49,6 +49,14 @@ export function Button({
   );
 }
 
+/**
+ * Shared styling for native <select> controls. The arbitrary variants style the
+ * option list itself, which browsers otherwise paint using the OS theme (a
+ * white flash over the dark UI). Composes with layout/padding classes.
+ */
+export const selectClass =
+  'border border-line text-ink-soft outline-none transition focus:border-accent/60 [&>option]:bg-[#0b1020] [&>option]:text-ink-soft [&>optgroup]:bg-[#0b1020]';
+
 export function Card({
   className,
   ...props

@@ -16,6 +16,8 @@ import {
   EmptyState,
   HelpTip,
   Spinner,
+  cn,
+  selectClass,
 } from '../components/ui';
 
 export function ProjectsPage() {
@@ -299,7 +301,7 @@ function NewProjectForm({
             id="np-profile"
             value={profileId}
             onChange={(e) => setProfileId(e.target.value)}
-            className={inputClass}
+            className={cn(inputClass, selectClass)}
           >
             {(profiles.length ? profiles : [{ id: 'standard', label: 'Standard', description: '', stages: [] }]).map(
               (p) => (
