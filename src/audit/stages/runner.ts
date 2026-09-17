@@ -585,33 +585,6 @@ export async function executeRun(
   return run;
 }
 
-/**
- * Replace a stage's findings with a recomputed set (e.g. after re-analysing
- * stored evidence), then rebuild the verdict so the gate and reports match.
- */
-export async function replaceStageFindings(
-  project: Project,
-  run: Run,
-  stageId: StageId,
-  findings: Finding[],
-): Promise<Run> {
-  const tagged = findings.map((f) => ({ ...f, stage: f.stage ?? stageId }));
-  await writeStageFindings(project.id, run.id, stageId, tagged);
-
-  const stage = run.stages.find((s) => s.id === stageId);
-  if (stage) {
-    stage.severityCounts = severityCountsFor(tagged);
-    stage.findings = tagged.length;
-    stage.status = statusFor(tagged, true);
-    stage.finishedAt = new Date().toISOString();
-    stage.message = `Rebuilt from stored evidence (${tagged.length} findings)`;
-  }
-  await writeRun(run);
-
-  await executeSingleStage(project, run, 'verdict');
-  return run;
-}
-
 /** Re-run a single stage in isolation, leaving the rest of the run intact. */
 export async function executeSingleStage(
   project: Project,
