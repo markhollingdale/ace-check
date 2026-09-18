@@ -95,6 +95,8 @@ export interface Issue {
   deviceCounts: Record<Device, number>;
   affectedPages: string[];
   affectedUrls: string[];
+  /** Each affected page paired with the device it was observed on. */
+  pageDevices?: { url: string; device: Device }[];
   count: number;
   totalPages: number;
   avgNumericValue: number | null;
@@ -239,6 +241,59 @@ export type FindingStatus =
 export type ReleaseVerdict = 'PASS' | 'WARN' | 'FAIL';
 export type ProductionStatus = 'READY' | 'CONDITIONAL' | 'NOT_READY' | 'UNKNOWN';
 
+/**
+ * How a finding should be treated. This is deliberately separate from severity:
+ * an expected/no-actionable finding can be severe in raw terms yet must not fail
+ * the release gate. `needs-investigation` means the evidence is insufficient to
+ * decide or fix.
+ */
+export type FindingDisposition =
+  | 'genuine'
+  | 'expected'
+  | 'third-party'
+  | 'not-actionable'
+  | 'needs-investigation';
+
+export const DISPOSITION_LABELS: Record<FindingDisposition, string> = {
+  genuine: 'Genuine',
+  expected: 'Expected / by design',
+  'third-party': 'Third-party',
+  'not-actionable': 'Not actionable',
+  'needs-investigation': 'Needs investigation',
+};
+
+/** A set of findings that share one root cause. */
+export interface FindingGroup {
+  id: string;
+  label: string;
+  summary: string;
+  /** Finding id that carries the root-cause evidence. */
+  primary: string;
+  /** All finding ids in the group, primary first. */
+  members: string[];
+}
+
+export interface GitInfo {
+  commit?: string;
+  branch?: string;
+  dirty?: boolean;
+}
+
+/** What was actually scanned, so a report can be reproduced. */
+export interface RunEnvironment {
+  targetUrl?: string;
+  scannedAt?: string;
+  userAgent?: string;
+  /** Web scans crawl anonymously, so this is false unless stated otherwise. */
+  authenticated: boolean;
+  profileId?: string;
+  stages: string[];
+  codebasePath?: string;
+  git?: GitInfo;
+  manifest?: { name?: string; version?: string };
+  codebaseMatch?: 'matched' | 'not-referenced' | 'unknown';
+}
+
 export interface AuditTarget {
   url?: string;
   codebasePath?: string;
@@ -283,6 +338,17 @@ export interface Finding {
   affectedPages?: string[];
   affectedFiles?: string[];
   status: FindingStatus;
+  /** How the finding should be treated; unknown findings are treated as genuine. */
+  disposition?: FindingDisposition;
+  /** Why the disposition was chosen, shown in reports. */
+  dispositionReason?: string;
+  /** Root-cause group this finding belongs to, if any. */
+  groupId?: string;
+  groupLabel?: string;
+  /** Primary findings carry the root cause; derived findings are symptoms. */
+  groupRole?: 'primary' | 'derived';
+  /** Affected pages paired with the device observed, for readable evidence. */
+  affectedPageRefs?: { url: string; device: Device }[];
   /** Human-readable context lines (blast radius, devices, impact). */
   context?: { label: string; value: string }[];
   /** Raw evidence items captured from the underlying tool, for prompts and detail views. */
@@ -306,6 +372,10 @@ export interface ReleaseGate {
   status: ProductionStatus;
   domains: DomainVerdict[];
   severityCounts: Record<'critical' | 'high' | 'medium' | 'low', number>;
+  /** Counts by disposition across all findings (including non-blocking ones). */
+  dispositions: Record<FindingDisposition, number>;
+  /** Root-cause groups, so derived symptoms are not counted as separate defects. */
+  groups: FindingGroup[];
 }
 
 // ---------------------------------------------------------------------------
@@ -403,6 +473,8 @@ export interface Run {
   durationMs?: number;
   /** Optional link to a legacy scan directory holding Lighthouse evidence. */
   webScanId?: string;
+  /** Captured environment so a report can be reproduced and trusted. */
+  environment?: RunEnvironment;
 }
 
 export interface StageProgress {

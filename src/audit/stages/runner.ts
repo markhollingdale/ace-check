@@ -14,7 +14,7 @@ import type {
 } from '../../types.js';
 import { defaultConfig } from '../../config.js';
 import { runScan } from '../../scanner/scanner.js';
-import { readIssues } from '../../storage/storage.js';
+import { readIssues, readMetadata } from '../../storage/storage.js';
 import {
   newRunId,
   readStageFindings,
@@ -27,6 +27,9 @@ import {
 } from '../../storage/projects.js';
 import { issueToFinding, correlate } from '../correlate.js';
 import { buildReleaseGate } from '../gate.js';
+import { buildEnvironment } from '../environment.js';
+import { projectNameFromCodebase, siteReferencesProject } from '../match.js';
+import { enrichFindingSources } from '../source-map.js';
 import {
   readReviewFindings,
   releaseReportAiMarkdown,
@@ -336,7 +339,10 @@ async function runWebQualityStage(
     runId,
   );
   const issues = (await readIssues(runId)) ?? [];
-  return issues.map((issue) => issueToFinding(issue, { scanId: runId }));
+  const findings = issues.map((issue) => issueToFinding(issue, { scanId: runId }));
+  // The web stage runs no code analysis, so map selectors/routes to candidate
+  // source files when a codebase is available.
+  return enrichFindingSources(findings, project.targets.codebasePath);
 }
 
 async function runDynamicStage(
@@ -412,7 +418,44 @@ async function runVerdictStage(
   emit: (message: string) => void,
 ): Promise<Finding[]> {
   const findings = await collectAllFindings(project, run);
+
+  // Capture the environment (target, codebase revision, whether the deployed
+  // site matches the codebase) so the report is reproducible.
+  const targetUrl = project.targets.productionUrl ?? project.targets.stagingUrl;
+  let codebaseMatch: 'matched' | 'not-referenced' | 'unknown' = 'unknown';
+  if (project.targets.codebasePath && targetUrl) {
+    const name = projectNameFromCodebase(project.targets.codebasePath);
+    if (name) {
+      const referenced = await siteReferencesProject(targetUrl, name);
+      codebaseMatch = referenced ? 'matched' : 'not-referenced';
+      if (!referenced) {
+        findings.push({
+          id: 'MATCH-001',
+          source: 'static',
+          prefix: 'MATCH',
+          category: 'match',
+          domain: 'ARCHITECTURE',
+          severity: 'high',
+          confidence: 'Low',
+          title: 'Deployed site may not match this codebase',
+          description: `The project "${name}" was not referenced on ${targetUrl}. The code and deployed URL may be unrelated.`,
+          evidence: { url: targetUrl, proof: 'possible' },
+          recommendation:
+            'Point the audit at the deployed version of this codebase.',
+          correlationKeys: [],
+          disposition: 'needs-investigation',
+          dispositionReason:
+            'Automated match check was inconclusive; confirm the deployment manually.',
+          status: 'detected',
+        });
+      }
+    }
+  }
+
+  const scanMeta = run.webScanId ? await readMetadata(run.webScanId) : null;
+  run.environment = buildEnvironment({ project, run, scanMeta, codebaseMatch });
   await writeRunFindings(project.id, run.id, findings);
+
   const gate = buildReleaseGate(findings);
   const correlations = correlate(findings);
   const report = {
@@ -421,6 +464,7 @@ async function runVerdictStage(
       codebasePath: project.targets.codebasePath,
       scanId: run.webScanId,
       date: new Date().toISOString().slice(0, 10),
+      environment: run.environment,
     },
     gate,
     findings,

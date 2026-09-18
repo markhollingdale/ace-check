@@ -88,6 +88,7 @@ export interface Issue {
   deviceCounts: Record<Device, number>;
   affectedPages: string[];
   affectedUrls: string[];
+  pageDevices?: { url: string; device: Device }[];
   count: number;
   totalPages: number;
   avgNumericValue: number | null;
@@ -229,6 +230,12 @@ export const SEVERITY_LABELS: Record<Severity, string> = {
 
 export type FindingSource = 'web' | 'static' | 'dynamic' | 'review';
 export type Confidence = 'High' | 'Medium' | 'Low';
+export type FindingDisposition =
+  | 'genuine'
+  | 'expected'
+  | 'third-party'
+  | 'not-actionable'
+  | 'needs-investigation';
 export type FindingStatus =
   | 'detected'
   | 'confirmed'
@@ -264,10 +271,24 @@ export interface Finding {
   affectedPages?: string[];
   affectedFiles?: string[];
   status: FindingStatus;
+  disposition?: FindingDisposition;
+  dispositionReason?: string;
+  groupId?: string;
+  groupLabel?: string;
+  groupRole?: 'primary' | 'derived';
+  affectedPageRefs?: { url: string; device: Device }[];
   context?: { label: string; value: string }[];
   details?: Record<string, unknown>[];
   detailsSummary?: string[];
   links?: { label: string; href: string }[];
+}
+
+export interface FindingGroup {
+  id: string;
+  label: string;
+  summary: string;
+  primary: string;
+  members: string[];
 }
 
 export interface ReviewModule {
@@ -295,6 +316,8 @@ export interface ReleaseGate {
   status: ProductionStatus;
   domains: DomainVerdict[];
   severityCounts: Record<'critical' | 'high' | 'medium' | 'low', number>;
+  dispositions: Record<FindingDisposition, number>;
+  groups: FindingGroup[];
 }
 
 export interface CorrelatedGroup {
@@ -407,6 +430,25 @@ export interface StageDef {
 
 export type RunStatus = 'pending' | 'running' | 'done' | 'failed' | 'cancelled';
 
+export interface GitInfo {
+  commit?: string;
+  branch?: string;
+  dirty?: boolean;
+}
+
+export interface RunEnvironment {
+  targetUrl?: string;
+  scannedAt?: string;
+  userAgent?: string;
+  authenticated: boolean;
+  profileId?: string;
+  stages: string[];
+  codebasePath?: string;
+  git?: GitInfo;
+  manifest?: { name?: string; version?: string };
+  codebaseMatch?: 'matched' | 'not-referenced' | 'unknown';
+}
+
 export interface Run {
   id: string;
   projectId: string;
@@ -418,6 +460,7 @@ export interface Run {
   finishedAt?: string;
   durationMs?: number;
   webScanId?: string;
+  environment?: RunEnvironment;
 }
 
 /** A run as listed for management, including its disk usage. */

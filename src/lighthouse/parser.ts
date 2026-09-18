@@ -48,7 +48,10 @@ export function lighthouseBaseSeverity(
   score: number | null,
 ): Severity {
   if (score == null) return 'info';
-  if (category === 'accessibility' && score === 0) return 'critical';
+  // A failing audit is a violation, not automatically a release blocker. The
+  // analyser floors known-critical audits (contrast, page language, title) and
+  // caps known-low-value ones; scoring every a11y audit as critical inflated
+  // the critical count.
   if (score === 0) return 'high';
   if (score < 0.5) return 'medium';
   if (score < 0.9) return 'low';
@@ -209,11 +212,19 @@ export function extractIssues(lhr: unknown): PageIssue[] {
 
     const category = categoryMap.get(auditId) || 'performance';
 
-    // Lighthouse "checklist" style audits (e.g. document-latency-insight) put
-    // a plain object in details.items rather than an array. Guard against that
-    // so a passing/failing checklist audit cannot crash page summarisation.
+    // Lighthouse "checklist" audits (e.g. document-latency-insight) put a plain
+    // object in details.items rather than an array. Keep it as a single row so
+    // the checklist's label/value pairs become readable evidence instead of
+    // being silently dropped.
     const rawItems = audit.details?.items;
-    const ownItems = Array.isArray(rawItems) ? rawItems : [];
+    let ownItems: Record<string, unknown>[];
+    if (Array.isArray(rawItems)) {
+      ownItems = rawItems;
+    } else if (rawItems && typeof rawItems === 'object') {
+      ownItems = [rawItems as Record<string, unknown>];
+    } else {
+      ownItems = [];
+    }
     // Metric audits have no items of their own; borrow the culprits so the
     // finding has evidence that points at something concrete.
     const items =

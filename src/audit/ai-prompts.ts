@@ -2,13 +2,15 @@ import type {
   Finding,
   FindingSource,
   Run,
+  RunEnvironment,
   ScanSummary,
   StageId,
 } from '../types.js';
 import { SEVERITY_LABELS } from '../types.js';
 import { buildReleaseGate } from './gate.js';
 import { correlate } from './correlate.js';
-import { STAGE_CATALOG } from './stages/catalog.js';
+import { groupFindings } from './groups.js';
+import { STAGE_CATALOG, runProfileById } from './stages/catalog.js';
 
 const SEVERITY_RANK: Record<string, number> = {
   critical: 0,
@@ -18,8 +20,16 @@ const SEVERITY_RANK: Record<string, number> = {
   info: 4,
 };
 
-const MAX_PAGES_LISTED = 20;
-const MAX_DETAIL_ITEMS = 6;
+const MAX_PAGES_LISTED = 40;
+/**
+ * Evidence caps are generous on purpose: the previous 6x160-char limit hid the
+ * actual CSP directive and network-tree URLs, which made findings unfixable.
+ * Only genuinely huge blobs are clipped.
+ */
+const MAX_DETAIL_ITEMS = 40;
+const VALUE_CAP = 2000;
+const NESTED_VALUE_CAP = 800;
+const NESTED_KEY_LIMIT = 10;
 
 function stageLabel(id: StageId | undefined): string {
   if (!id) return 'unknown stage';
@@ -27,7 +37,7 @@ function stageLabel(id: StageId | undefined): string {
   return def ? `${def.label} (${def.tools.join(', ')})` : id;
 }
 
-function truncateValue(value: unknown, max = 400): string {
+function truncateValue(value: unknown, max = VALUE_CAP): string {
   const text =
     typeof value === 'string' ? value : JSON.stringify(value) ?? String(value);
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -44,17 +54,19 @@ function detailLines(details: Record<string, unknown>[]): string[] {
         // Lighthouse often nests the interesting value (node, url, etc).
         const nested = Object.entries(value as Record<string, unknown>)
           .filter(([, v]) => v != null && typeof v !== 'object')
-          .slice(0, 4)
-          .map(([k, v]) => `${k}=${truncateValue(v, 160)}`);
+          .slice(0, NESTED_KEY_LIMIT)
+          .map(([k, v]) => `${k}=${truncateValue(v, NESTED_VALUE_CAP)}`);
         if (nested.length > 0) parts.push(`${key}{${nested.join(', ')}}`);
         continue;
       }
-      parts.push(`${key}=${truncateValue(value, 200)}`);
+      parts.push(`${key}=${truncateValue(value)}`);
     }
     if (parts.length > 0) lines.push(`- ${parts.join(' | ')}`);
   }
   if (details.length > MAX_DETAIL_ITEMS) {
-    lines.push(`- ...and ${details.length - MAX_DETAIL_ITEMS} more item(s)`);
+    lines.push(
+      `- ...and ${details.length - MAX_DETAIL_ITEMS} more item(s) omitted`,
+    );
   }
   return lines;
 }
@@ -80,6 +92,18 @@ export function findingBlock(finding: Finding, index: number): string {
   lines.push(`- Confidence: ${finding.confidence} (evidence: ${finding.evidence.proof})`);
   if (finding.effort) lines.push(`- Estimated effort: ${finding.effort}`);
   lines.push(`- Location: ${findingLocation(finding)}`);
+  if (finding.disposition) {
+    lines.push(
+      `- Disposition: ${finding.disposition}${
+        finding.dispositionReason ? ` - ${finding.dispositionReason}` : ''
+      }`,
+    );
+  }
+  if (finding.groupId) {
+    lines.push(
+      `- Root-cause group: ${finding.groupLabel ?? finding.groupId} (${finding.groupRole ?? 'primary'})`,
+    );
+  }
 
   if (finding.context && finding.context.length > 0) {
     lines.push('');
@@ -110,18 +134,21 @@ export function findingBlock(finding: Finding, index: number): string {
     lines.push(...detailLines(finding.details));
   }
 
-  if (finding.affectedPages && finding.affectedPages.length > 0) {
+  const pageRefs =
+    finding.affectedPageRefs && finding.affectedPageRefs.length > 0
+      ? finding.affectedPageRefs.map((p) => `${p.url} (${p.device})`)
+      : finding.affectedPages;
+
+  if (pageRefs && pageRefs.length > 0) {
     lines.push('');
     lines.push(
-      `Affected pages (${finding.affectedPages.length} total, showing up to ${MAX_PAGES_LISTED}):`,
+      `Affected pages (${pageRefs.length} rows, showing up to ${MAX_PAGES_LISTED}):`,
     );
-    for (const page of finding.affectedPages.slice(0, MAX_PAGES_LISTED)) {
+    for (const page of pageRefs.slice(0, MAX_PAGES_LISTED)) {
       lines.push(`- ${page}`);
     }
-    if (finding.affectedPages.length > MAX_PAGES_LISTED) {
-      lines.push(
-        `- ...and ${finding.affectedPages.length - MAX_PAGES_LISTED} more`,
-      );
+    if (pageRefs.length > MAX_PAGES_LISTED) {
+      lines.push(`- ...and ${pageRefs.length - MAX_PAGES_LISTED} more`);
     }
   }
 
@@ -130,6 +157,14 @@ export function findingBlock(finding: Finding, index: number): string {
     lines.push('Affected files:');
     for (const file of finding.affectedFiles.slice(0, 20)) {
       lines.push(`- ${file}`);
+    }
+  }
+
+  if (finding.links && finding.links.length > 0) {
+    lines.push('');
+    lines.push('Evidence links:');
+    for (const link of finding.links) {
+      lines.push(`- ${link.label}: ${link.href}`);
     }
   }
 
@@ -192,6 +227,51 @@ Do not make changes yet. Work through the findings below and produce:
 Prefer fixing shared root causes over treating each occurrence separately -
 many findings often have a single cause behind them.`;
 
+const CODE_STAGES: StageId[] = [
+  'sast',
+  'secrets',
+  'dependencies',
+  'abuse',
+  'review',
+];
+
+function profileHasCodeStage(run?: Run | null): boolean {
+  if (!run) return false;
+  const profile = runProfileById(run.profileId);
+  const stages = profile?.stages ?? run.stages.map((s) => s.id);
+  return stages.some((s) => CODE_STAGES.includes(s));
+}
+
+function renderEnvironment(env: RunEnvironment): string[] {
+  const lines: string[] = ['## Environment', ''];
+  if (env.targetUrl) lines.push(`- Target: ${env.targetUrl}`);
+  if (env.scannedAt) lines.push(`- Scanned at: ${env.scannedAt}`);
+  lines.push(
+    `- Authenticated: ${env.authenticated ? 'yes' : 'no (anonymous crawl)'}`,
+  );
+  if (env.profileId) lines.push(`- Profile: ${env.profileId}`);
+  if (env.stages.length > 0) lines.push(`- Stages: ${env.stages.join(', ')}`);
+  if (env.codebasePath) lines.push(`- Codebase: ${env.codebasePath}`);
+  if (env.manifest?.name) {
+    lines.push(
+      `- Project manifest: ${env.manifest.name}${
+        env.manifest.version ? `@${env.manifest.version}` : ''
+      }`,
+    );
+  }
+  if (env.git?.commit) {
+    lines.push(
+      `- Commit: ${env.git.commit}${env.git.branch ? ` (${env.git.branch})` : ''}${
+        env.git.dirty ? ' [dirty working tree]' : ''
+      }`,
+    );
+  }
+  if (env.codebaseMatch) lines.push(`- Codebase match: ${env.codebaseMatch}`);
+  if (env.userAgent) lines.push(`- User agent: ${env.userAgent}`);
+  lines.push('');
+  return lines;
+}
+
 export function generateRunPrompt(opts: {
   projectName: string;
   run?: Run | null;
@@ -205,12 +285,16 @@ export function generateRunPrompt(opts: {
   let findings = opts.findings;
   if (stage) findings = findings.filter((f) => f.stage === stage);
   if (source) findings = findings.filter((f) => f.source === source);
-  findings = [...findings].sort(
-    (a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9),
+
+  const { findings: tagged } = groupFindings(findings);
+  tagged.sort(
+    (a, b) =>
+      (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9) ||
+      (a.groupRole === 'derived' ? 1 : 0) - (b.groupRole === 'derived' ? 1 : 0),
   );
 
-  const gate = buildReleaseGate(findings);
-  const correlations = correlate(findings);
+  const gate = buildReleaseGate(tagged);
+  const correlations = correlate(tagged);
 
   const lines: string[] = [];
   lines.push(`# Audit report - ${projectName}`);
@@ -232,6 +316,10 @@ export function generateRunPrompt(opts: {
     lines.push('');
   }
 
+  if (run?.environment) {
+    lines.push(...renderEnvironment(run.environment));
+  }
+
   lines.push('## Verdict');
   lines.push('');
   lines.push(`Production status: ${gate.status}`);
@@ -240,15 +328,36 @@ export function generateRunPrompt(opts: {
     `Critical ${gate.severityCounts.critical} | High ${gate.severityCounts.high} | Medium ${gate.severityCounts.medium} | Low ${gate.severityCounts.low}`,
   );
   lines.push('');
+  const d = gate.dispositions;
+  lines.push(
+    `Dispositions: genuine ${d.genuine} | expected ${d.expected} | third-party ${d['third-party']} | not-actionable ${d['not-actionable']} | needs-investigation ${d['needs-investigation']}`,
+  );
+  lines.push('');
+  lines.push(
+    'Counts include only primary, genuine findings; derived symptoms and intentional/third-party findings are listed but not gated.',
+  );
+  lines.push('');
 
   const failedDomains = gate.domains.filter((d) => d.verdict !== 'PASS');
   if (failedDomains.length > 0) {
     lines.push('| Domain | Verdict | Critical | High | Medium | Low |');
     lines.push('| --- | --- | --- | --- | --- | --- |');
-    for (const d of failedDomains) {
+    for (const domain of failedDomains) {
       lines.push(
-        `| ${d.domain} | ${d.verdict} | ${d.critical} | ${d.high} | ${d.medium} | ${d.low} |`,
+        `| ${domain.domain} | ${domain.verdict} | ${domain.critical} | ${domain.high} | ${domain.medium} | ${domain.low} |`,
       );
+    }
+    lines.push('');
+  }
+
+  if (gate.groups.length > 0) {
+    lines.push(`## Root-cause groups (${gate.groups.length})`);
+    lines.push('');
+    for (const group of gate.groups) {
+      lines.push(
+        `- ${group.label} (primary ${group.primary}): ${group.members.join(', ')}`,
+      );
+      lines.push(`  ${group.summary}`);
     }
     lines.push('');
   }
@@ -276,14 +385,20 @@ export function generateRunPrompt(opts: {
   lines.push('');
   lines.push(RUN_INSTRUCTIONS);
   lines.push('');
+  if (!profileHasCodeStage(run)) {
+    lines.push(
+      'Profile limitation: this run executed no code stage, so no finding is mapped to source files and cross-source correlations are empty. Run the standard or full profile (with a codebase path) for file-level mapping.',
+    );
+    lines.push('');
+  }
 
-  lines.push(`## Findings (${findings.length})`);
+  lines.push(`## Findings (${tagged.length})`);
   lines.push('');
-  if (findings.length === 0) {
+  if (tagged.length === 0) {
     lines.push('No findings in scope.');
     lines.push('');
   } else {
-    findings.forEach((finding, i) => {
+    tagged.forEach((finding, i) => {
       lines.push(findingBlock(finding, i + 1));
       lines.push('');
       lines.push('---');

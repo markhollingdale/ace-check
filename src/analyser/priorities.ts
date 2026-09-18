@@ -5,7 +5,6 @@ const CRITICAL_AUDITS = new Set<string>([
   'html-has-lang',
   'document-title',
   'no-vulnerable-libraries',
-  'is-crawlable',
 ]);
 
 const HIGH_AUDITS = new Set<string>([
@@ -13,6 +12,7 @@ const HIGH_AUDITS = new Set<string>([
   'uses-responsive-images',
   'modern-image-formats',
   'render-blocking-resources',
+  'render-blocking-insight',
   'unused-javascript',
   'unused-css-rules',
   'legacy-javascript',
@@ -24,6 +24,7 @@ const HIGH_AUDITS = new Set<string>([
   'bootup-time',
   'dom-size',
   'largest-contentful-paint-element',
+  'is-crawlable',
   'link-name',
   'button-name',
   'input-button-name',
@@ -40,7 +41,6 @@ const HIGH_AUDITS = new Set<string>([
   'aria-required-attr',
   'aria-valid-attr-value',
   'aria-valid-attr',
-  'heading-order',
   'http-status-code',
   'canonical',
   'redirects-http',
@@ -54,6 +54,9 @@ const MEDIUM_AUDITS = new Set<string>([
   'timing-budget',
   'total-tap-targets',
   'tap-targets',
+  'target-size',
+  'aria-prohibited-attr',
+  'heading-order',
   'meta-description',
   'link-text',
   'hreflang',
@@ -62,9 +65,30 @@ const MEDIUM_AUDITS = new Set<string>([
   'structured-data',
   'plugins',
   'viewport',
-  'unused-javascript',
   'duplicate-id',
 ]);
+
+/**
+ * Audits whose natural Lighthouse score overstates their release impact. The
+ * cap is applied last, so coverage or bundle-size floors cannot lift them.
+ */
+const SEVERITY_CAPS: Record<string, Severity> = {
+  'valid-source-maps': 'low',
+  'legacy-javascript': 'low',
+  'legacy-javascript-insight': 'low',
+  'speed-index': 'low',
+  'bf-cache': 'low',
+  redirects: 'low',
+  'network-dependency-tree-insight': 'low',
+  'document-latency-insight': 'low',
+  'forced-reflow-insight': 'low',
+  'lcp-breakdown-insight': 'low',
+  'cls-culprits-insight': 'low',
+  'image-delivery-insight': 'low',
+  'is-crawlable': 'medium',
+  'heading-order': 'medium',
+  'target-size': 'medium',
+};
 
 const ORDER: Record<Severity, number> = {
   critical: 5,
@@ -112,8 +136,9 @@ export function assignSeverity(input: SeverityInput): Severity {
   const coverage =
     input.totalPages > 0 ? input.affectedCount / input.totalPages : 0;
 
-  if (coverage >= 0.9) severity = bump(severity, 2);
-  else if (coverage >= 0.7) severity = bump(severity, 1);
+  // Coverage is a hint, not a doubling bonus. A widespread issue is more
+  // important, but must not manufacture a critical out of a symptom.
+  if (coverage >= 0.7) severity = bump(severity, 1);
   else if (coverage <= 0.05) severity = bump(severity, -1);
 
   if (input.unitHint === 'bytes' && input.avgNumericValue != null) {
@@ -124,6 +149,14 @@ export function assignSeverity(input: SeverityInput): Severity {
   if (input.unitHint === 'ms' && input.avgNumericValue != null) {
     if (input.avgNumericValue >= 2_000) severity = maxSeverity(severity, 'medium');
   }
+
+  // Only the curated set may be critical; everything else tops out at high.
+  if (!CRITICAL_AUDITS.has(input.auditId) && severity === 'critical') {
+    severity = 'high';
+  }
+
+  const cap = SEVERITY_CAPS[input.auditId];
+  if (cap && ORDER[severity] > ORDER[cap]) severity = cap;
 
   return severity;
 }

@@ -58,6 +58,10 @@ export function buildIssue(group: GroupedIssue, totalPages: number): Issue {
 
   const affectedPages = entries.map((e) => e.page.slug);
   const affectedUrls = entries.map((e) => e.page.url);
+  const pageDevices = entries.map((e) => ({
+    url: e.page.url,
+    device: e.page.device,
+  }));
 
   const deviceCounts = {} as Record<Device, number>;
   for (const device of DEVICES) deviceCounts[device] = 0;
@@ -116,6 +120,7 @@ export function buildIssue(group: GroupedIssue, totalPages: number): Issue {
     deviceCounts,
     affectedPages,
     affectedUrls,
+    pageDevices,
     count: entries.length,
     totalPages,
     avgNumericValue,

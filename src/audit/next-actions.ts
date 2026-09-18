@@ -1,6 +1,7 @@
 import type { Finding, NextAction } from '../types.js';
 import { isResolved } from './lifecycle.js';
 import { effectiveSeverity } from './gate.js';
+import { groupFindings } from './groups.js';
 
 const SEVERITY_RANK: Record<string, number> = {
   critical: 0,
@@ -36,9 +37,19 @@ function effortRank(effort: string | undefined): number {
  * then by blast radius (how many files/pages are affected), then by effort.
  */
 export function buildNextActions(findings: Finding[], limit = 5): NextAction[] {
-  const ranked = findings
+  // Persisted findings are not group-tagged, so derive the role here.
+  const { findings: grouped } = groupFindings(findings);
+  const ranked = grouped
     .filter((f) => !isResolved(f.status))
     .filter((f) => f.severity !== 'info')
+    // Derived symptoms and intentional/third-party findings are not next actions.
+    .filter((f) => f.groupRole !== 'derived')
+    .filter(
+      (f) =>
+        f.disposition === undefined ||
+        f.disposition === 'genuine' ||
+        f.disposition === 'needs-investigation',
+    )
     .map((f) => {
       const blast = (f.affectedFiles?.length ?? 0) + (f.affectedPages?.length ?? 0);
       return { finding: f, blast };

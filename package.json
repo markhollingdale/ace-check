@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "start": "node dist/server/server.js",
     "audit": "tsx src/cli/cli.ts",
-    "test": "tsx --test src/audit/checks/checks.test.ts src/audit/ingest.test.ts src/audit/gate.test.ts src/audit/phase4.test.ts src/audit/next-actions.test.ts src/lighthouse/parser.test.ts src/lighthouse/runner.test.ts src/storage/projects.test.ts",
+    "test": "tsx --test src/audit/checks/checks.test.ts src/audit/ingest.test.ts src/audit/gate.test.ts src/audit/phase4.test.ts src/audit/next-actions.test.ts src/audit/evidence.test.ts src/audit/disposition.test.ts src/audit/groups.test.ts src/audit/source-map.test.ts src/audit/ai-prompts.test.ts src/analyser/priorities.test.ts src/lighthouse/parser.test.ts src/lighthouse/runner.test.ts src/storage/projects.test.ts",
     "licenses": "node scripts/generate-attributions.mjs",
     "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('web/dist',{recursive:true,force:true})\""
   },

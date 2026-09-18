@@ -1,5 +1,6 @@
 import type { Finding, Issue } from '../types.js';
 import { summariseEvidenceItems } from './evidence.js';
+import { classifyIssue } from './disposition.js';
 
 export const CORRELATION_KEYS = {
   performance: 'performance',
@@ -48,6 +49,61 @@ export function correlationKeysForIssue(issue: Issue): string[] {
   return [...keys];
 }
 
+const AUDIT_GUIDANCE: Record<string, string> = {
+  'largest-contentful-paint':
+    'Find the LCP element on the worst page, then make it discoverable in the initial HTML: render it above the fold, mark it priority/eager, and set an accurate `sizes` attribute.',
+  'lcp-discovery-insight':
+    'The LCP image is lazy-loaded or missing `fetchpriority="high"`. Pass `priority` to the first-row `next/image` and correct `sizes`.',
+  'render-blocking-insight':
+    'Identify the blocking stylesheet/script in the evidence, then inline critical CSS or split the per-theme styles out of the global bundle.',
+  'unused-javascript':
+    'Add a bundle analyser to attribute the named chunk, then `next/dynamic` heavy client-only trees (charts, maps, editors) and move data fetching to server components.',
+  'total-blocking-time':
+    'TBT is a symptom of the shared client bundle. Reduce hydration work (see unused-javascript) and defer below-the-fold client islands.',
+  'max-potential-fid':
+    'Long tasks on the main thread; split or defer the chunk named in the evidence.',
+  interactive:
+    'Main-thread work from the shared bundle; see unused-javascript.',
+  'mainthread-work-breakdown':
+    'Main-thread work from the shared bundle; see unused-javascript.',
+  'bootup-time':
+    'JS execution time; attribute the named chunk with a bundle analyser and defer it.',
+  'color-contrast':
+    'Use the measured foreground/background pair in the evidence. Prefer semantic tokens that invert on dark surfaces rather than raw `text-foreground`/`text-muted-foreground`.',
+  'target-size':
+    'Give the flagged control a >=24x24 CSS-pixel target (e.g. `size-6`/`min-h-6 min-w-6` plus padding) and keep >=24px spacing.',
+  'aria-prohibited-attr':
+    'Add a valid role to the flagged element (`role="complementary"`/`region`) or move the accessible name onto a semantics-bearing child.',
+  'heading-order':
+    'Make the heading sequence descend without skipping levels; render the accordion header as the next level down from the page `h1`.',
+  'errors-in-console':
+    'The evidence contains the full console message and source location. For CSP violations, extend the specific directive for the blocked origin.',
+  'cumulative-layout-shift':
+    'Reserve space for the culprits named in the evidence (fixed min-width/height or a same-size skeleton) before async data resolves.',
+  'is-crawlable':
+    'Confirm whether the flagged pages are meant to be private. If so, this is expected; otherwise remove the `noindex`/blocking directive.',
+  'bf-cache':
+    'Usually caused by `cache-control: no-store` on dynamic/auth pages. Lighthouse marks the reasons not actionable; accept unless bfcache is a goal.',
+  redirects:
+    'Check whether each hop is intentional (auth gate or canonical redirect). Update internal links to the canonical target to remove the hop.',
+  'cache-insight':
+    'The resources are third-party tiles; caching is controlled by the tile provider. Consider a provider with immutable caching or reduce tile requests.',
+  'image-delivery-insight':
+    'Correct the image `sizes`/quality/source dimensions; third-party tile optimisations are out of your control.',
+  'valid-source-maps':
+    'Decide the policy: ship source maps (or upload hidden maps to your error tracker). This has no user-facing impact.',
+  'legacy-javascript-insight':
+    'Low impact (~15 KB of polyfills). Only investigate if very old browsers are not required.',
+  'uses-long-cache-ttl':
+    'Set long-lived immutable cache headers for hashed first-party assets; third-party origins are out of your control.',
+};
+
+function recommendationForIssue(issue: Issue): string {
+  const specific = AUDIT_GUIDANCE[issue.id];
+  const fallback = issue.likelyCommonCause;
+  return specific ? `${specific} ${fallback}` : fallback;
+}
+
 export function issueToFinding(
   issue: Issue,
   opts: { scanId?: string } = {},
@@ -79,7 +135,16 @@ export function issueToFinding(
   context.push({ label: 'Likely common cause', value: issue.likelyCommonCause });
 
   const samplePages = issue.affectedUrls.slice(0, 5);
-  const evidence = issue.examples.slice(0, 12);
+  const evidence = issue.examples.slice(0, 20);
+
+  // Per-page device tags stop the same URL appearing twice with no explanation
+  // (it was scanned on both mobile and desktop).
+  const pageRefs =
+    issue.pageDevices && issue.pageDevices.length > 0
+      ? issue.pageDevices
+      : undefined;
+
+  const { disposition, reason } = classifyIssue(issue);
 
   // `affectedPages` holds the stored page slugs, which is what the Lighthouse
   // report routes are keyed by. Link the first few so a finding points at the
@@ -109,13 +174,16 @@ export function issueToFinding(
       numericValue: issue.avgNumericValue,
       proof: 'confirmed',
     },
-    recommendation: `${issue.likelyCommonCause}${
+    recommendation: `${recommendationForIssue(issue)}${
       samplePages.length > 0
         ? ` Start from these pages: ${samplePages.join(', ')}.`
         : ''
     }`,
     correlationKeys: correlationKeysForIssue(issue),
     affectedPages: issue.affectedUrls,
+    affectedPageRefs: pageRefs,
+    disposition,
+    dispositionReason: reason,
     status: 'detected',
     context,
     details: evidence.length > 0 ? evidence : undefined,
