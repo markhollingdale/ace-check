@@ -419,6 +419,24 @@ Dedup: Security owns "is rate limit correct in code?", Performance owns "is it c
 
 ---
 
+# Score Integrity - Verified vs Unverified
+
+Production readiness is split between facts a code review can prove and facts only a human (or the
+platform dashboard) can confirm. Do not blend them into one number.
+
+Report **two** scores plus an explicit unverified list:
+
+- **Verified Score (0-100)** - based only on what code, config and committed artefacts prove.
+- **Unverified / Assumed** - every item that depends on dashboard state or human action, marked
+  `UNKNOWN` until confirmed. Do not award or deduct verified points for these.
+- **Manual items** - link each unverified item to its checklist / runbook (`pre-live-gate.md`,
+  `vercel-neon-manual-setup.md`, provider consoles) and state what "pass" looks like.
+
+State clearly that the overall deployment recommendation is capped until the unverified items are
+confirmed (see `# Platform Firewall & Spend Safeguards` and the mandatory `PRD-MANUAL-001`).
+
+---
+
 # Technical Debt
 
 Identify:
@@ -438,7 +456,10 @@ Estimate long-term operational impact.
 
 Every issue must include:
 
+- Title
 - Severity
+- Confidence (Confirmed / Inferred / Needs manual verification)
+- Evidence / Repro
 - Explanation
 - Business impact
 - Technical impact
@@ -504,6 +525,7 @@ Examples:
 Provide:
 
 - Overall Production Readiness Score
+- **Verified Score (0-100)** and the **Unverified / UNKNOWN** item list (see `# Score Integrity`)
 - Category Scores
 - Deployment Recommendation
 - Go / No-Go Recommendation
@@ -511,7 +533,9 @@ Provide:
 - Estimated Remediation Effort
 - Overall Recommendation
 
-Clearly state whether the application is suitable for production deployment.
+Clearly state whether the application is suitable for production deployment, and that the
+recommendation is capped to `NO` / `PROVISIONAL` while unverified platform controls are
+unconfirmed.
 
 Follow the structure defined in:
 

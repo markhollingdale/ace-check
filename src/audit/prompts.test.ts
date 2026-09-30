@@ -53,6 +53,7 @@ test('generateFullSuitePrompt: inlines every review plus the framework and runne
     'reviews/10-architecture-analysis/10-architecture-analysis.md',
     'reviews/20-security-analysis/20-security-analysis.md',
     'reviews/180-portability-analysis/180-portability-analysis.md',
+    'reviews/190-abuse-bot-resilience/190-abuse-bot-resilience.md',
     'reviews/990-meta-review/990-meta-review.md',
     'reviews/140-specification/140-specification.md',
     'reviews/999-summary/999-summary.md',

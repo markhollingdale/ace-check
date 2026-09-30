@@ -359,7 +359,10 @@ Evaluate whether the architecture would support future additions such as:
 
 Every issue must include:
 
+- Title
 - Severity
+- Confidence (Confirmed / Inferred / Needs manual verification)
+- Evidence / Repro
 - Explanation
 - Business impact
 - Technical impact

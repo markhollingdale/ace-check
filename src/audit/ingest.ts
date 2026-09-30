@@ -1,4 +1,4 @@
-import type { Finding, Severity } from '../types.js';
+import type { Confidence, Finding, Severity } from '../types.js';
 import { CATALOG_BY_PREFIX } from './module-catalog.js';
 
 export function extractField(block: string, field: string): string {
@@ -28,6 +28,18 @@ export function mapSeverity(raw: string): Severity {
   if (t.startsWith('medium')) return 'medium';
   if (t.startsWith('low')) return 'low';
   return 'info';
+}
+
+/**
+ * Map the framework v2 `Confidence` field to the internal confidence scale.
+ * `Needs manual verification` maps to Low so it cannot hard-block the gate.
+ */
+export function mapConfidence(raw: string): Confidence {
+  const t = raw.trim().toLowerCase();
+  if (t.startsWith('confirm')) return 'High';
+  if (t.startsWith('infer')) return 'Medium';
+  if (t.startsWith('needs') || t.includes('manual')) return 'Low';
+  return 'Medium';
 }
 
 export function extractFiles(text: string): string[] {
@@ -71,7 +83,11 @@ export function parseReviewReport(markdown: string): Finding[] {
     const block = markdown.slice(start, end);
 
     const severityRaw = extractField(block, 'Severity');
+    const titleRaw = extractField(block, 'Title');
     const categoryRaw = extractField(block, 'Category');
+    const confidenceRaw = extractField(block, 'Confidence');
+    const evidenceRaw =
+      extractField(block, 'Evidence / Repro') || extractField(block, 'Evidence');
     const problem = extractField(block, 'Problem');
     const why = extractField(block, 'Why It Matters');
     const recommendation = extractField(block, 'Recommendation');
@@ -79,6 +95,7 @@ export function parseReviewReport(markdown: string): Finding[] {
 
     const prefix = id.split('-')[0];
     const entry = CATALOG_BY_PREFIX[prefix];
+    const title = titleRaw || categoryRaw || `${prefix} finding`;
 
     findings.push({
       id,
@@ -88,14 +105,17 @@ export function parseReviewReport(markdown: string): Finding[] {
       category: entry?.category ?? prefix.toLowerCase(),
       domain: entry?.domain ?? 'UNKNOWN',
       severity: mapSeverity(severityRaw),
-      confidence: 'Medium',
-      title: categoryRaw || `${prefix} finding`,
+      confidence: mapConfidence(confidenceRaw),
+      title,
       description: problem || why || categoryRaw,
       evidence: { proof: 'possible' },
       recommendation: recommendation || undefined,
       effort: effort || undefined,
-      correlationKeys: correlationKeysForText(`${categoryRaw} ${problem}`),
-      affectedFiles: extractFiles(problem),
+      correlationKeys: correlationKeysForText(`${title} ${categoryRaw} ${problem}`),
+      affectedFiles: extractFiles(`${problem} ${evidenceRaw}`),
+      context: evidenceRaw
+        ? [{ label: 'Evidence / Repro', value: evidenceRaw }]
+        : undefined,
       status: 'detected',
     });
   }

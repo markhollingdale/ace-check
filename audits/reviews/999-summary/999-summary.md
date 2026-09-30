@@ -1,6 +1,6 @@
 # Engineering Review Summary
 
-Version: **v1.2.0**
+Version: **v2.0.0**
 
 ## Objective
 
@@ -54,6 +54,7 @@ docs/ai-review/reports/
 | Business Logic | `[project-name]-160-business-logic.md`, `[project-name]-160-business-logic-review.md` |
 | Privacy & Compliance | `[project-name]-170-privacy-compliance.md`, `[project-name]-170-privacy-compliance-review.md` |
 | Portability & Reusability | `[project-name]-180-portability.md`, `[project-name]-180-portability-review.md` |
+| Abuse, Bot & Crawl Resilience | `[project-name]-190-abuse-bot-resilience.md`, `[project-name]-190-abuse-bot-resilience-review.md` |
 | Meta-Review (990, optional) | `[project-name]-990-meta-review.md` |
 
 Missing reports go into the warning block (§1 below). A summary is still produced from whatever exists.
@@ -72,6 +73,25 @@ Extract from each:
 - Production readiness verdict
 - Top priority improvements
 - Estimated remediation effort
+
+---
+
+# Phase 1.5 - Severity Calibration
+
+Independently-authored reviews draw the Critical/High line differently. Before aggregating,
+**calibrate** severities so the combined counts and roadmap are defensible.
+
+For every finding across all reviews:
+
+- Apply one consistent test: does it block production (**Critical**), should it before production
+  (**High**), plan it for the next cycle (**Medium**), or is it nice-to-have (**Low**)?
+- Respect **Confidence**: a finding marked `Needs manual verification` cannot be **Critical** on an
+  unverified basis - cap it at High and note the dependency.
+- Watch for reviews that systematically over- or under-grade (e.g. every finding Critical).
+- Do **not** invent re-grades; only adjust where the calibration test clearly disagrees.
+
+Record every change so it is auditable. The calibrated severities are the ones used in §5 and the
+roadmap; the per-review scores themselves are not changed.
 
 ---
 
@@ -150,14 +170,28 @@ Present a table of all review scores:
 | Business Logic | X/100 | YES/NO |
 | Privacy & Compliance | X/100 | YES/NO |
 | Portability & Reusability | X/100 | YES/NO |
+| Abuse, Bot & Crawl Resilience | X/100 | YES/NO |
 
 Mark missing reviews as `MISSING` and exclude them from any aggregate calculations.
 
 ---
 
+## 4b. Severity Calibration
+
+Record the calibration pass from Phase 1.5. If no severity was changed, say so explicitly.
+
+| Finding ID | Review | From | To | Reason |
+|------------|--------|------|----|--------|
+| [ID] | [Review] | [Severity] | [Severity] | [Why the calibration test disagreed] |
+
+Also note any review that systematically over- or under-graded, and any finding capped for being
+`Needs manual verification`.
+
+---
+
 ## 5. Combined Severity Summary
 
-Aggregate severity counts across all reviews:
+Aggregate severity counts across all reviews, using the **calibrated** severities from §4b:
 
 | Severity | Count |
 |----------|-------|

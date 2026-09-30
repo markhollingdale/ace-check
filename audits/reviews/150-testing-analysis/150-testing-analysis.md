@@ -348,7 +348,10 @@ Estimate the maintenance burden.
 
 Every issue must include:
 
+- Title
 - Severity
+- Confidence (Confirmed / Inferred / Needs manual verification)
+- Evidence / Repro
 - Explanation
 - Business impact
 - Technical impact
@@ -418,7 +421,22 @@ Read the implementation before making conclusions.
 
 Inspect test files, test configuration, CI pipelines and test scripts before making recommendations.
 
-Run the test suite if practical - a suite that cannot be run locally is itself a finding.
+Run the test suite when it is safe to do so - a suite that cannot be run locally is itself a finding.
+
+**Permitted without asking (safe, read-only or isolated):**
+
+- Read-only tests, and tests against an in-memory or ephemeral database
+- Tests that do not touch a shared, staging or production database
+- Tests that do not call live side-effecting providers (payments, email, SMS, external APIs)
+
+**Not permitted without explicit user approval:**
+
+- Commands that migrate, truncate, seed or write to a real / shared / staging / production database
+- Any command that changes external state or spends money
+
+If a project rule forbids database commands, restrict execution to the in-memory suite and say so -
+do not skip evidence-gathering entirely, and do not ask the user to run commands you could safely run
+yourself. Prefer citing a real pass/fail run over an assumption.
 
 Prioritise coverage of business-critical and money-moving logic over coverage percentages.
 

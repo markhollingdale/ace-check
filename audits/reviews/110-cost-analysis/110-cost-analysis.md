@@ -381,6 +381,34 @@ Estimate potential savings where practical.
 
 ---
 
+# Score Integrity - Verified vs Unverified
+
+Cost analysis mixes known facts (provider pricing, committed config, real usage/billing data) with
+estimates. Do not present an estimate as a measurement.
+
+- **Verified basis** - figures derived from provider pricing, committed config, or actual
+  billing/usage data. Say where the number came from.
+- **Assumed / ESTIMATE** - modelled figures; label each with its assumption.
+- **UNKNOWN** - spend you cannot see (dashboard-only). List it explicitly; do not invent a number.
+
+State which basis the headline cost score and each major figure uses.
+
+---
+
+# Quantification - Mandatory
+
+Every finding must carry a quantified figure. For cost, at least one of:
+
+- `$/month` at a stated volume, or
+- `$/1k requests`, `$/1k users`, or `$/1k AI interactions`, or
+- a percentage of the current bill.
+
+A finding without a number is not acceptable for this review. If the figure is modelled, state the
+assumption and mark it `ESTIMATE`. If it is genuinely unknowable, mark it `UNKNOWN` and say what
+data would make it measurable.
+
+---
+
 # Technical Debt
 
 Identify:
@@ -400,14 +428,17 @@ Estimate long-term financial impact.
 
 Every issue must include:
 
+- Title
 - Severity
+- Confidence (Confirmed / Inferred / Needs manual verification)
+- Evidence / Repro
 - Explanation
 - Business impact
 - Technical impact
 - Recommendation
 - Example implementation (where appropriate)
 - Estimated effort
-- Estimated financial impact (where practical)
+- **Quantified measure (mandatory - see `# Quantification`)**
 
 Do not duplicate findings that belong in other reviews.
 
@@ -451,11 +482,12 @@ Examples:
 Provide:
 
 - Overall Cost Efficiency Score
+- **Verified vs Assumed / UNKNOWN basis** (see `# Score Integrity`)
 - Category Scores
 - Cost Scalability Assessment
 - Highest Priority Savings
 - Estimated Remediation Effort
-- Estimated Annual Savings (where practical)
+- Estimated Annual Savings (state `ESTIMATE` where modelled)
 - Overall Recommendation
 
 Follow the structure defined in:

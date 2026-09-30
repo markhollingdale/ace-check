@@ -1,6 +1,6 @@
 # Review Methodology & Self-Critique (Meta-Review)
 
-Version: **v1.2.0**
+Version: **v2.0.0**
 
 ## Objective
 
@@ -37,7 +37,7 @@ framework/20-review-framework.md
 
 # Numbering
 
-The Meta-Review is locked at **990**. It sits after the numbered code reviews (10-180) and
+The Meta-Review is locked at **990**. It sits after the numbered code reviews (10-190) and
 before the Summary (999), so the Summary can consolidate its coverage-gap findings. Do not
 renumber it.
 
@@ -212,26 +212,23 @@ Rules:
 
 ## 8. Framework Recommendations
 
-Recommend changes to the shared framework itself. Consider, and only propose what the evidence
-supports:
+The **v2.0.0 baseline** now includes: per-finding `Title`, `Confidence` and `Evidence / Repro`;
+header `Commit` / `Branch` / `Run mode`; a severity-calibration pass before the Summary;
+verified vs unverified/`UNKNOWN` scoring in Production (100) and Cost (110); and mandatory
+quantification in Performance (30) and Cost (110).
 
-- A **confidence** field per finding (Confirmed / Inferred / Needs manual verification) and an
-  **Evidence / Repro** field, so a code-confirmed defect and a "looks wrong" inference do not
-  render identically.
-- A **code-revision anchor** in every report header (commit SHA, branch, run mode), so reports
-  cannot silently go stale.
-- A **persistent findings ledger** with stable IDs (first_seen / last_seen / status / owner) so
+Do **not** re-recommend these. Instead, verify they are actually used: if a report omits a required
+field or skips calibration, report that as a document/process defect (§6), not as a framework gap.
+
+Recommend only what is still missing, and only where the evidence supports it:
+
+- A **persistent findings ledger** with stable IDs (first_seen / last_seen / status / owner), so
   cross-run status is not lost when finding IDs restart each run.
-- **Mandatory quantification** for Performance and Cost findings (a unit such as p95 latency,
-  bundle KB, or $/1k requests), and for other reviews where a number is expected.
-- A **severity-calibration pass** before the Summary so independent reviews converge on where
-  the Critical/High line sits.
-- **Risk-weighted headline scoring** (a plain mean lets a low-risk area carry the same weight
-  as Security), plus a score distribution or confidence range.
-- **Formal parallel orchestration and a mandatory reconciliation step** if parallel runs are
-  supported, recorded in the Summary.
-- Any change to the finding template must be treated as a **breaking framework change** and
-  versioned accordingly.
+- **Risk-weighted headline scoring** (a plain mean lets a low-risk area carry the same weight as
+  Security), plus a score distribution or confidence range.
+- **Formal parallel orchestration and a mandatory reconciliation step**, recorded in the Summary.
+- Any further change to the finding template must be treated as a **breaking framework change**
+  and versioned accordingly.
 
 ---
 

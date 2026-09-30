@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractField, extractFiles, mapSeverity, parseReviewReport } from './ingest.js';
+import { extractField, extractFiles, mapConfidence, mapSeverity, parseReviewReport } from './ingest.js';
 
 const FIXTURE = `# Security Review
 
@@ -93,6 +93,52 @@ test('mapSeverity normalises labels', () => {
   assert.equal(mapSeverity('High'), 'high');
   assert.equal(mapSeverity('Medium'), 'medium');
   assert.equal(mapSeverity('Low'), 'low');
+});
+
+test('parseReviewReport reads v2 Title, Confidence and Evidence fields', () => {
+  const md = `# Abuse Review
+
+## ABUSE-001
+
+## Title
+
+Unthrottled public search
+
+## Severity
+
+High
+
+## Confidence
+
+Confirmed
+
+## Evidence / Repro
+
+Burst of 60 requests returns 200; see lib/search.ts:42.
+
+## Category
+
+Rate limiting
+
+## Problem
+
+No limiter on the public search procedure.
+`;
+  const findings = parseReviewReport(md);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].id, 'ABUSE-001');
+  assert.equal(findings[0].title, 'Unthrottled public search');
+  assert.equal(findings[0].confidence, 'High');
+  assert.equal(findings[0].domain, 'SECURITY');
+  assert.ok(findings[0].affectedFiles?.some((f) => f.includes('search.ts')));
+  assert.equal(findings[0].context?.[0].label, 'Evidence / Repro');
+});
+
+test('mapConfidence maps v2 confidence labels', () => {
+  assert.equal(mapConfidence('Confirmed'), 'High');
+  assert.equal(mapConfidence('Inferred'), 'Medium');
+  assert.equal(mapConfidence('Needs manual verification'), 'Low');
+  assert.equal(mapConfidence(''), 'Medium');
 });
 
 test('extractFiles finds code references', () => {

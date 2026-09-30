@@ -37,10 +37,11 @@ What review would you like to run?
 14. Business Logic
 15. Privacy & Compliance
 16. Portability & Reusability
-17. Summary (aggregates existing reviews - may run on a partial set, will warn about missing reviews)
-18. Specification (generates implementation plans; in the Full Suite this runs automatically for every severity that has findings)
-19. Full Suite (runs all 16 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
-20. Meta-Review (reviews the review process itself - methodology, coverage gaps, document defects, recommended changes)
+17. Abuse, Bot & Crawl Resilience
+18. Summary (aggregates existing reviews - may run on a partial set, will warn about missing reviews)
+19. Specification (generates implementation plans; in the Full Suite this runs automatically for every severity that has findings)
+20. Full Suite (runs all 17 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
+21. Meta-Review (reviews the review process itself - methodology, coverage gaps, document defects, recommended changes)
 ```
 
 Based on the selection, read the corresponding review document from the paths below and follow its instructions exactly.
@@ -65,12 +66,13 @@ Based on the selection, read the corresponding review document from the paths be
 | 14 | Business Logic | `../reviews/160-business-logic-analysis/160-business-logic-analysis.md` |
 | 15 | Privacy & Compliance | `../reviews/170-privacy-compliance-analysis/170-privacy-compliance-analysis.md` |
 | 16 | Portability & Reusability | `../reviews/180-portability-analysis/180-portability-analysis.md` |
-| 17 | Summary | `../reviews/999-summary/999-summary.md` |
-| 18 | Specification | `../reviews/140-specification/140-specification.md` |
-| 19 | Full Suite | `../runners/run-full-suite.md` |
-| 20 | Meta-Review | `../reviews/990-meta-review/990-meta-review.md` |
+| 17 | Abuse, Bot & Crawl Resilience | `../reviews/190-abuse-bot-resilience/190-abuse-bot-resilience.md` |
+| 18 | Summary | `../reviews/999-summary/999-summary.md` |
+| 19 | Specification | `../reviews/140-specification/140-specification.md` |
+| 20 | Full Suite | `../runners/run-full-suite.md` |
+| 21 | Meta-Review | `../reviews/990-meta-review/990-meta-review.md` |
 
-If the user selects **19 (Full Suite)**, stop here and follow `run-full-suite.md` instead.
+If the user selects **20 (Full Suite)**, stop here and follow `run-full-suite.md` instead.
 
 ## Runbooks (Manual Checks - Code Cannot Prove ON)
 

@@ -155,7 +155,7 @@ export function ReviewPage() {
           </span>
         }
         title="AI review workspace"
-        description="Generate prompts for 16 engineering reviews, run them in any agent (or in-tool), then ingest the reports into the unified finding store."
+        description="Generate prompts for 17 engineering reviews, run them in any agent (or in-tool), then ingest the reports into the unified finding store."
       />
 
       {!codebasePath && (

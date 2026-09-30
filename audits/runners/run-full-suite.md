@@ -1,8 +1,8 @@
 # Run Full AI Review Suite
 
-Executes **all 16 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999), then always generates the Specification (140) for every severity level that has findings.
+Executes **all 17 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999), then always generates the Specification (140) for every severity level that has findings.
 
-This document is selected via option **19** in `run-review.md`.
+This document is selected via option **20** in `run-review.md`.
 
 ---
 
@@ -29,7 +29,7 @@ Why sequential:
 - **Earlier reports inform later reviews.** Each review's Phase 1 documentation (technology stack, project structure, environment variables, data model) is reused by later reviews instead of being re-discovered. Architecture (10) is first because it documents the foundation everything else builds on.
 - **The deduplication rule works best with shared context.** Reviews must reference existing finding IDs from earlier reports instead of duplicating them (e.g., a money-flow finding belongs in Business Logic 160, not in Testing 150's coverage notes).
 - **One shared context produces consistency**: one project name, one report style, no naming collisions, no contradictory findings.
-- **The Summary requires all 16 reports anyway** - a parallel run still needs a sequential aggregation pass at the end.
+- **The Summary requires all 17 reports anyway** - a parallel run still needs a sequential aggregation pass at the end.
 - **Parallelism multiplies cost**: N agents re-read the same codebase independently instead of reusing earlier Phase 1 docs.
 
 ---
@@ -64,6 +64,7 @@ Why sequential:
 | 14 | Business Logic (160) | `[project]-160-business-logic.md` | `[project]-160-business-logic-review.md` |
 | 15 | Privacy & Compliance (170) | `[project]-170-privacy-compliance.md` | `[project]-170-privacy-compliance-review.md` |
 | 16 | Portability & Reusability (180) | `[project]-180-portability.md` | `[project]-180-portability-review.md` |
+| 17 | Abuse, Bot & Crawl Resilience (190) | `[project]-190-abuse-bot-resilience.md` | `[project]-190-abuse-bot-resilience-review.md` |
 
 For each review:
 
@@ -79,7 +80,7 @@ Before starting a later review, **skim the Phase 1 reports of the reviews alread
 
 ### 3. Run the Meta-Review (990)
 
-After the 16 reviews, before the Summary:
+After the 17 reviews, before the Summary:
 
 - Read `../reviews/990-meta-review/990-meta-review.md` and follow it.
 - Write `[project]-990-meta-review.md`.
@@ -89,10 +90,11 @@ After the 16 reviews, before the Summary:
 
 ### 4. Produce the Summary (999)
 
-When all 16 reviews and the Meta-Review (990) are complete:
+When all 17 reviews and the Meta-Review (990) are complete:
 
 - Read `../reviews/999-summary/999-summary.md` and follow it.
 - Write `[project]-999-summary.md`.
+- Perform the **severity-calibration pass** (Summary Phase 1.5) before aggregating, and record any re-grades in §4b.
 - If any review was skipped, follow the Summary's partial-run warning rules.
 - **Always include §6b Manual Runbooks & Pre-Live Gate** - if `docs/runbooks/pre-live-gate.md` is unsigned, the Summary must emit `⚠️ MANUAL GATE NOT SIGNED` and keep `Production Ready: PROVISIONAL` even if all code scores are green.
 

@@ -377,17 +377,36 @@ Simulate mentally: with current `revalidate`/cache headers, how many DB queries 
 
 ---
 
+# Quantification - Mandatory
+
+Every finding must include a measurable unit. At least one of:
+
+- Latency (`p50`/`p95`/`p99`, ms), or
+- Bundle / payload size (KB), or
+- Query count or request count, or
+- Bytes transferred, or
+- Core Web Vitals (LCP/CLS/INP/TBT).
+
+"Slow", "large" or "expensive" without a number is not acceptable for this review. Where a figure
+cannot be measured, provide an estimated figure and label it `ESTIMATE`, with the basis.
+
+---
+
 # Required Findings
 
 Every issue must include:
 
+- Title
 - Severity
+- Confidence (Confirmed / Inferred / Needs manual verification)
+- Evidence / Repro
 - Explanation
 - Business impact
 - Technical impact
 - Recommendation
 - Example implementation (where appropriate)
 - Estimated effort
+- **Quantified measure (mandatory - see `# Quantification`)**
 
 Do not duplicate findings that belong in other reviews.
 

@@ -3,7 +3,7 @@
 This directory is the **source of truth** for the Ace AI Review Framework, vendored
 into AceCheck. It was previously maintained as a standalone `ai-review` collection.
 
-The framework defines a versioned suite of structured engineering reviews (16
+The framework defines a versioned suite of structured engineering reviews (17
 reviews + a Meta-Review self-critique + a Summary aggregator + a Specification
 generator). Each review follows a shared finding format with IDs, severity,
 evidence, recommendations, and estimated effort, and can be run standalone or as
@@ -18,7 +18,7 @@ a full sequential suite.
 ## Run a review
 
 - `runners/run-review.md` - run a single review (or the meta-review / summary / specification).
-- `runners/run-full-suite.md` - run all 16 reviews in sequence, then the Meta-Review and the Summary.
+- `runners/run-full-suite.md` - run all 17 reviews in sequence, then the Meta-Review and the Summary.
 
 ## Layout
 

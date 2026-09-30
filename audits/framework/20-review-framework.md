@@ -1,6 +1,6 @@
 # Review Framework
 
-Version: **v1.2.0**
+Version: **v2.0.0**
 
 This document defines the standard output format that every engineering review must follow.
 
@@ -21,9 +21,24 @@ Every report must begin with the following metadata block:
 | **Date** | [YYYY-MM-DD] |
 | **Framework Version** | [Current version] |
 | **Reviewer** | [AI model used] |
+| **Commit** | [git commit SHA, or `unknown`] |
+| **Branch** | [git branch, or `unknown`] |
+| **Run mode** | [standalone / full-suite / full-suite-parallel] |
 ```
 
 This ensures reports can be compared across time and projects.
+
+**Revision anchor (mandatory).** Capture the revision the review was run against so a report
+cannot silently go stale:
+
+```
+git rev-parse HEAD                      # Commit
+git rev-parse --abbrev-ref HEAD         # Branch
+```
+
+If the project is not a git checkout, write `unknown` - never leave the field blank. `Run mode`
+records which runner produced the report: `standalone` (single review), `full-suite`
+(sequential), or `full-suite-parallel`.
 
 ---
 
@@ -61,6 +76,15 @@ Suggested guidance:
 
 Scores should reflect the overall quality of the reviewed area.
 
+**Verified vs unverified.** If a review scores facts it cannot verify from code alone (dashboard
+state, external provider configuration, third-party behaviour), it must not fold them silently into
+a single 0-100 grade. Either:
+
+- split the score into **Verified** and **Unverified / assumed**, or
+- mark the unverified items `UNKNOWN` and exclude them from the headline score.
+
+State which was done. A green score that quietly includes unverified assumptions is misleading.
+
 ---
 
 # 3. Category Scores
@@ -91,6 +115,10 @@ High
 Medium
 Low
 ```
+
+Severities are provisional until the suite-level **severity-calibration pass** that runs before
+the Summary (see the Summary review, 999). Calibration aligns independent reviews to the same
+Critical/High line; the Summary records any finding it re-graded.
 
 ---
 
@@ -149,6 +177,15 @@ ARCH-007
 
 ---
 
+## Title
+
+A short, human-readable title for the finding (a few words). This is distinct from `Category` -
+it names the specific problem, not the review area. Example: `Missing rate limiting on authentication endpoints`.
+
+Machine parsers read this field; do not rely on `Category` as the title.
+
+---
+
 ## Severity
 
 One of:
@@ -163,6 +200,33 @@ One of:
 ## Category
 
 The affected review category.
+
+---
+
+## Confidence
+
+One of:
+
+- **Confirmed** - reproduced, or directly proven by code or command output in this review.
+- **Inferred** - strong reasoning from the code, but not executed or reproduced.
+- **Needs manual verification** - cannot be proven from code alone (dashboard state, external
+  provider configuration, third-party behaviour).
+
+Never present an inference as `Confirmed`.
+
+---
+
+## Evidence / Repro
+
+The concrete proof for the finding. Include whatever applies:
+
+- File paths and line numbers (`lib/auth.ts:42`)
+- The exact command(s) run, and their output
+- A minimal reproduction (request, input, steps)
+- For `Needs manual verification`: the dashboard/setting to check and what "pass" looks like
+
+If there is genuinely no evidence, write `None` and explain why in the Problem. Do not invent
+evidence.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Objective
 
-Generate a comprehensive, phase-based implementation specification that addresses findings from the 16 engineering reviews at a specific severity level.
+Generate a comprehensive, phase-based implementation specification that addresses findings from the 17 engineering reviews at a specific severity level.
 
 This document does **not** evaluate code quality or identify new issues - that work has already been done by the review reports.
 
@@ -77,6 +77,7 @@ docs/ai-review/reports/
 | Business Logic | `[project-name]-160-business-logic.md`, `[project-name]-160-business-logic-review.md` |
 | Privacy & Compliance | `[project-name]-170-privacy-compliance.md`, `[project-name]-170-privacy-compliance-review.md` |
 | Portability & Reusability | `[project-name]-180-portability.md`, `[project-name]-180-portability-review.md` |
+| Abuse, Bot & Crawl Resilience | `[project-name]-190-abuse-bot-resilience.md`, `[project-name]-190-abuse-bot-resilience-review.md` |
 
 If any review reports are missing, list them and stop.
 
@@ -91,7 +92,8 @@ Read every review report listed above.
 Extract from each:
 
 - All findings with severity (Critical, High, Medium, Low)
-- Finding ID, category, problem description
+- Finding ID, title, category, problem description
+- Confidence (Confirmed / Inferred / Needs manual verification) and Evidence / Repro
 - Why it matters (business and technical impact)
 - Recommendation with example implementation (if provided)
 - Estimated fix time
@@ -101,7 +103,7 @@ Extract from each:
 
 # Phase 2 - Organize by Review
 
-Group all findings for the selected severity into 16 phases following this structure:
+Group all findings for the selected severity into 17 phases following this structure:
 
 | Phase | Review |
 |-------|--------|
@@ -121,13 +123,14 @@ Group all findings for the selected severity into 16 phases following this struc
 | Phase 14 | Business Logic (160) |
 | Phase 15 | Privacy & Compliance (170) |
 | Phase 16 | Portability & Reusability (180) |
+| Phase 17 | Abuse, Bot & Crawl Resilience (190) |
 
 **Phase numbering:**
 - Phase 1: [Selected Severity] Architecture findings
 - Phase 2: [Selected Severity] Security findings
 - Phase 3: [Selected Severity] Performance findings
 - ...
-- Phase 16: [Selected Severity] Portability & Reusability findings
+- Phase 17: [Selected Severity] Abuse, Bot & Crawl Resilience findings
 
 If a review has no findings at the selected severity level, skip that phase and note it as "No findings at this severity level."
 
@@ -192,7 +195,7 @@ Provide a concise overview:
 Explain:
 
 - What this specification covers (findings at [severity] level)
-- How phases are organized (one phase per review, 16 phases total)
+- How phases are organized (one phase per review, 17 phases total)
 - How to use this document (mark tasks complete, track progress)
 - Dependencies between phases
 - Validation approach (typecheck, lint, test after each phase)
@@ -277,6 +280,10 @@ _All difficulty ratings are listed above for easy reference. See individual sect
 **Severity:** [Critical/High/Medium/Low]
 
 **Category:** [e.g., Authentication, Performance, Database]
+
+**Confidence:** [Confirmed / Inferred / Needs manual verification]
+
+**Evidence / Repro:** [file:line, command output, or the manual check - copied from the review]
 
 **Difficulty:** [Simple/Moderate/Complex]
 
@@ -389,6 +396,11 @@ Include one fully worked example phase to show the expected format and detail le
 **Severity:** Critical
 
 **Category:** Authentication
+
+**Confidence:** Inferred
+
+**Evidence / Repro:** `app/api/auth/login/route.ts` - `POST` handler has no limiter; no rate-limit
+middleware in `middleware.ts`.
 
 **Difficulty:** Complex
 
@@ -557,7 +569,7 @@ List cross-phase dependencies and risks:
 | Phase 1 (Architecture) changes may affect other phases | Structural changes require testing | Complete Architecture phase first |
 | Phase 2 (Security) may require database migrations | Migration conflicts | Coordinate with Phase 4 (Database) |
 | Phase 13 (Testing) work depends on code changed by other phases | Tests rewritten for removed/reworked code | Run Testing phase after other phases; add/update tests alongside each phase where practical |
-| Phase 14 (Business Logic) overlaps Phase 2 (Security) abuse findings | Duplicate or conflicting fixes | Coordinate ownership: Business Logic fixes *correctness*, Security fixes *abuse* |
+| Phase 14 (Business Logic) overlaps Phase 17 (Abuse, Bot & Crawl Resilience) findings | Duplicate or conflicting fixes | Coordinate ownership: Business Logic fixes *correctness*, Abuse (17) fixes *abuse and rate limiting* |
 | Phase 15 (Privacy) touches auth, analytics, and logging changed by Phases 2, 10, 12 | Fixes interact | Coordinate with Security (2) and Production Readiness (10) |
 | Phase 16 (Portability) may suggest module extraction | Structural changes ripple | Coordinate with Phase 1 (Architecture) and Phase 12 (Maintainability) |
 | [etc.] | [etc.] | [etc.] |
