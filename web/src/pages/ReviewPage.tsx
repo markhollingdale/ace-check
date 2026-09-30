@@ -8,6 +8,7 @@ import {
   listProfiles,
   listReviewModules,
   runReview,
+  runSuiteReview,
 } from '../lib/api';
 import type {
   AuditProfile,
@@ -36,6 +37,7 @@ export function ReviewPage() {
   const [modules, setModules] = useState<ReviewModule[]>([]);
   const [suitePrompt, setSuitePrompt] = useState<string | null>(null);
   const [busySuite, setBusySuite] = useState(false);
+  const [busySuiteRun, setBusySuiteRun] = useState(false);
   const [promptFor, setPromptFor] = useState<number | null>(null);
   const [activePrompt, setActivePrompt] = useState<{ n: number; text: string } | null>(
     null,
@@ -98,6 +100,19 @@ export function ReviewPage() {
       setError(err instanceof Error ? err.message : 'Failed to run review.');
     } finally {
       setRunning(null);
+    }
+  };
+
+  const runSuite = async () => {
+    setError(null);
+    setBusySuiteRun(true);
+    try {
+      const response = await runSuiteReview(codebasePath, profile || undefined);
+      setActivePrompt({ n: 0, text: response });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to run suite.');
+    } finally {
+      setBusySuiteRun(false);
     }
   };
 
@@ -176,6 +191,13 @@ export function ReviewPage() {
               disabled={busySuite || !codebasePath}
             >
               {busySuite ? 'Generating…' : 'Full-suite prompt'}
+            </Button>
+            <Button
+              variant="accent"
+              onClick={runSuite}
+              disabled={busySuiteRun || !codebasePath}
+            >
+              {busySuiteRun ? 'Running…' : 'Run suite'}
             </Button>
           </div>
         }

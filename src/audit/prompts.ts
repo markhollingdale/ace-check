@@ -2,7 +2,73 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { AuditModule, Finding } from '../types.js';
 import { SKIP_DIRS } from './checks/util.js';
-import { auditsBaseDir } from './modules.js';
+import { auditsBaseDir, listReviewDirs } from './modules.js';
+
+interface ReferenceDoc {
+  /** Path as the framework refers to it, relative to the audits directory. */
+  ref: string;
+  content: string;
+}
+
+/** Framework documents every review relies on for scoring and formatting. */
+const SHARED_FRAMEWORK_DOCS = [
+  'README.md',
+  'framework/10-readme.md',
+  'framework/20-review-framework.md',
+] as const;
+
+function readReference(base: string, ref: string): ReferenceDoc | null {
+  const full = path.join(base, ref);
+  if (!existsSync(full)) return null;
+  return { ref, content: readFileSync(full, 'utf8') };
+}
+
+function frameworkReferenceDocs(base: string): ReferenceDoc[] {
+  return SHARED_FRAMEWORK_DOCS.map((ref) => readReference(base, ref)).filter(
+    (doc): doc is ReferenceDoc => doc !== null,
+  );
+}
+
+function reviewReferenceDocs(base: string): ReferenceDoc[] {
+  return listReviewDirs(base)
+    .sort((a, b) => a.number - b.number)
+    .map((dir) =>
+      readReference(base, `reviews/${dir.dirName}/${dir.dirName}.md`),
+    )
+    .filter((doc): doc is ReferenceDoc => doc !== null);
+}
+
+/**
+ * Inline the framework documents a prompt references, so it can be pasted into
+ * an agent that only sees the project under review (and has no access to the
+ * AceCheck repository or its `audits/` directory).
+ */
+function renderReferenceDocs(docs: ReferenceDoc[]): string {
+  if (docs.length === 0) return '';
+  const parts: string[] = [
+    '## Reference documents (inlined)',
+    '',
+    'This prompt is self-contained. The AceCheck framework files it relies on are',
+    'reproduced below. Wherever a document refers to a path - for example',
+    '`framework/20-review-framework.md` or',
+    '`../reviews/20-security-analysis/20-security-analysis.md` - use the matching',
+    'inline document in this section. Do not try to read these files from disk; they',
+    'are not part of the project under review.',
+    '',
+  ];
+  for (const doc of docs) {
+    parts.push(`<reference-document path="${doc.ref}">`);
+    parts.push(doc.content.trimEnd());
+    parts.push('</reference-document>');
+    parts.push('');
+  }
+  return parts.join('\n');
+}
+
+/** Resolve the audits root from a module document path. */
+function baseFromDoc(doc: string): string {
+  return path.dirname(path.dirname(path.dirname(doc)));
+}
 
 export interface ProjectContext {
   name: string;
@@ -155,6 +221,7 @@ export function generateModulePrompt(
       renderFindings(webEvidence),
     );
   }
+  sections.push(renderReferenceDocs(frameworkReferenceDocs(baseFromDoc(module.doc))));
   sections.push('## Review standard', doc);
   return sections.join('\n');
 }
@@ -164,7 +231,8 @@ export function generateFullSuitePrompt(
   opts: { cwd?: string; scope?: { number: number; title: string }[] } = {},
 ): string {
   const cwd = opts.cwd ?? process.cwd();
-  const runner = path.join(auditsBaseDir(cwd), 'runners', 'run-full-suite.md');
+  const base = auditsBaseDir(cwd);
+  const runner = path.join(base, 'runners', 'run-full-suite.md');
   const runnerDoc = existsSync(runner) ? readFileSync(runner, 'utf8') : '';
   const sections = [
     '# Full AI Review Suite',
@@ -180,6 +248,12 @@ export function generateFullSuitePrompt(
       opts.scope.map((m) => `- ${m.number} ${m.title}`).join('\n'),
     );
   }
+  sections.push(
+    renderReferenceDocs([
+      ...frameworkReferenceDocs(base),
+      ...reviewReferenceDocs(base),
+    ]),
+  );
   sections.push('## Runner instructions', runnerDoc);
-  return sections.join('\n');
+  return sections.filter(Boolean).join('\n');
 }

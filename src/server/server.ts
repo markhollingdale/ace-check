@@ -106,6 +106,10 @@ const app = new Hono();
 
 app.use('*', cors({ origin: '*' }));
 app.use('*', compress());
+app.use('/api/*', async (c, next) => {
+  c.header('Cache-Control', 'no-store');
+  await next();
+});
 
 app.get('/api/health', (c) => c.json({ ok: true }));
 
@@ -779,6 +783,34 @@ app.post('/api/reviews/run', async (c) => {
   return c.json({ response });
 });
 
+app.post('/api/reviews/suite-run', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const codebasePath =
+    typeof body?.codebasePath === 'string' ? body.codebasePath : '';
+  const profile = typeof body?.profile === 'string' ? body.profile : '';
+  const config = aiConfigFromEnv();
+  if (!config) {
+    return c.json(
+      {
+        error:
+          'No AI provider configured. Set ACE_AI_API_KEY (and optionally ACE_AI_BASE_URL, ACE_AI_MODEL).',
+      },
+      400,
+    );
+  }
+  if (!codebasePath) return c.json({ error: 'Please provide codebasePath.' }, 400);
+  const ctx = buildProjectContext(codebasePath);
+  const p = profile ? profileById(profile) : undefined;
+  const scope = p
+    ? discoverModules()
+        .filter((m) => p.moduleNumbers.includes(m.number))
+        .map((m) => ({ number: m.number, title: m.title }))
+    : undefined;
+  const prompt = generateFullSuitePrompt(ctx, { scope });
+  const response = await runAiReview(prompt, config);
+  return c.json({ response });
+});
+
 app.get('/api/findings/status', (c) => {
   const codebasePath = c.req.query('codebasePath') || '';
   if (!codebasePath) return c.json({ error: 'Please provide codebasePath.' }, 400);
@@ -1179,15 +1211,11 @@ app.delete('/api/scans/:id', async (c) => {
 
 const webDist = path.resolve(process.cwd(), 'web', 'dist');
 if (existsSync(webDist)) {
-  app.use('/assets/*', async (c, next) => {
-    c.header('Cache-Control', 'public, max-age=31536000, immutable');
-    await next();
-  });
+  // Local-first tool: never cache the frontend. Assets are content-hashed, but a
+  // stale bundle in an already-open tab is confusing after a rebuild, and the
+  // payloads are tiny enough that caching buys nothing.
   app.use('/*', async (c, next) => {
-    const last = (c.req.path.split('/').pop() || '').split('?')[0];
-    if (last === '' || last === 'index.html' || !last.includes('.')) {
-      c.header('Cache-Control', 'no-cache');
-    }
+    c.header('Cache-Control', 'no-store');
     await next();
   });
   app.use('/*', serveStatic({ root: webDist }));

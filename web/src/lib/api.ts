@@ -421,3 +421,25 @@ export async function runReview(
   }
   return (await json<{ response: string }>(res)).response;
 }
+
+export async function runSuiteReview(
+  codebasePath: string,
+  profile?: string,
+): Promise<string> {
+  const res = await fetch('/api/reviews/suite-run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ codebasePath, profile }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      message = (JSON.parse(text) as { error?: string }).error ?? message;
+    } catch {
+      /* not JSON */
+    }
+    throw new Error(message);
+  }
+  return (await json<{ response: string }>(res)).response;
+}
