@@ -20,7 +20,15 @@ framework/20-review-framework.md
 
 # Severity Selection
 
-Before generating the specification, ask the user which severity level they want to generate:
+## When run as part of the Full Suite (the default)
+
+Generating the specification is **mandatory** and happens automatically at the end of a full-suite run. Do **not** ask the user which severity to generate.
+
+Generate a separate specification document for **every severity level that has at least one finding** (Critical, High, Medium, Low). If a severity level has no findings, skip that level and note it in the Summary - do not create an empty document.
+
+## When run standalone
+
+If the specification is invoked on its own (not as part of the Full Suite), you may ask which severity level to generate:
 
 ```
 Which severity level would you like to generate a specification for?
@@ -31,7 +39,7 @@ Which severity level would you like to generate a specification for?
 4. Low (nice to have improvements)
 ```
 
-Based on the selection, generate a specification document for that severity level only.
+Generate a specification document for the selected severity level only.
 
 This approach:
 - Reduces document size and context requirements

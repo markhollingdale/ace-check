@@ -1,6 +1,6 @@
 # Run Full AI Review Suite
 
-Executes **all 16 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999). The Specification (140) is generated afterwards only if the user asks.
+Executes **all 16 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999), then always generates the Specification (140) for every severity level that has findings.
 
 This document is selected via option **19** in `run-review.md`.
 
@@ -96,9 +96,14 @@ When all 16 reviews and the Meta-Review (990) are complete:
 - If any review was skipped, follow the Summary's partial-run warning rules.
 - **Always include §6b Manual Runbooks & Pre-Live Gate** - if `docs/runbooks/pre-live-gate.md` is unsigned, the Summary must emit `⚠️ MANUAL GATE NOT SIGNED` and keep `Production Ready: PROVISIONAL` even if all code scores are green.
 
-### 5. Offer the Specification (140)
+### 5. Produce the Specification (140) - mandatory
 
-Ask the user whether to generate an implementation specification (and at which severity level). Only generate it if asked - it is optional output.
+Generating the specification is **not optional** and is done without asking the user.
+
+- Read `../reviews/140-specification/140-specification.md` and follow it.
+- Generate a separate specification document for **every severity level that has findings** (Critical, High, Medium, Low), in that order: `[project]-140-specification-critical.md`, `-high.md`, `-medium.md`, `-low.md`.
+- Skip any severity level with no findings and note the skip in the Summary - do not create an empty document.
+- The specification is always produced at the end of a full-suite run; the user is never prompted for a severity level.
 
 ---
 

@@ -38,7 +38,7 @@ What review would you like to run?
 15. Privacy & Compliance
 16. Portability & Reusability
 17. Summary (aggregates existing reviews - may run on a partial set, will warn about missing reviews)
-18. Specification (generates implementation plan - will ask which severity level)
+18. Specification (generates implementation plans; in the Full Suite this runs automatically for every severity that has findings)
 19. Full Suite (runs all 16 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
 20. Meta-Review (reviews the review process itself - methodology, coverage gaps, document defects, recommended changes)
 ```

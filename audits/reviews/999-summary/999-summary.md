@@ -308,7 +308,7 @@ For each specification that exists, summarise:
 - Estimated total effort
 - Progress (if any phases have been completed)
 
-If no specifications exist, recommend generating them using the Specification option from the runner. Suggest starting with Critical, then High, then Medium. Low can be skipped if not needed.
+In a Full Suite run the specifications are mandatory: one is generated for every severity level that has findings. A missing specification for a severity that has findings is a **process gap** - flag it. A severity with no findings correctly has no specification; note it rather than treating it as missing.
 
 ---
 
