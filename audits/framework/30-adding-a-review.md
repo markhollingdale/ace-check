@@ -1,6 +1,6 @@
 # Adding a Review to the Suite
 
-Version: **v1.1.0**
+Version: **v1.2.0**
 
 This document is the checklist for extending the review suite with a new review standard. Follow it every time a review is added, renamed, or retired so the suite stays internally consistent.
 
@@ -11,6 +11,7 @@ This document is the checklist for extending the review suite with a new review 
 - Reviews are numbered in 10-step slots: `10`, `20`, ... `180`.
 - New reviews take the next free slot. Do **not** renumber existing reviews - every generated report references the review number in its filename (`[project-name]-40-database-review.md`). Renumbering breaks comparability with historical reports.
 - The **Summary is locked at `999`** - it is always the last document in the suite, regardless of how many reviews exist. Never reuse 999 for anything else.
+- The **Meta-Review is locked at `990`**. It is a self-critique of the process, not a code review: it runs after the numbered reviews and before the Summary. Do not renumber it or fold it into the Summary.
 - The **Specification generator stays at `140`**. It is a generator, not a summary, and is not renumbered.
 
 ---

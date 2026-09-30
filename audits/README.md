@@ -4,9 +4,10 @@ This directory is the **source of truth** for the Ace AI Review Framework, vendo
 into AceCheck. It was previously maintained as a standalone `ai-review` collection.
 
 The framework defines a versioned suite of structured engineering reviews (16
-reviews + a Summary aggregator + a Specification generator). Each review follows a
-shared finding format with IDs, severity, evidence, recommendations, and estimated
-effort, and can be run standalone or as a full sequential suite.
+reviews + a Meta-Review self-critique + a Summary aggregator + a Specification
+generator). Each review follows a shared finding format with IDs, severity,
+evidence, recommendations, and estimated effort, and can be run standalone or as
+a full sequential suite.
 
 ## Start here
 
@@ -16,8 +17,8 @@ effort, and can be run standalone or as a full sequential suite.
 
 ## Run a review
 
-- `runners/run-review.md` - run a single review (or the summary / specification).
-- `runners/run-full-suite.md` - run all 16 reviews in sequence, then the Summary.
+- `runners/run-review.md` - run a single review (or the meta-review / summary / specification).
+- `runners/run-full-suite.md` - run all 16 reviews in sequence, then the Meta-Review and the Summary.
 
 ## Layout
 
@@ -29,9 +30,11 @@ audits/
     10-architecture-analysis/
     20-security-analysis/
     ...
+    990-meta-review/
     999-summary/
   runners/
 ```
 
-Review documents are at `reviews/<number>-<name>/<number>-<name>.md`. The Summary is
-numbered `999` (always last) and the Specification generator is `140`.
+Review documents are at `reviews/<number>-<name>/<number>-<name>.md`. The Meta-Review
+is numbered `990`, the Summary is numbered `999` (always last), and the Specification
+generator is `140`.

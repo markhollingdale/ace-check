@@ -1,6 +1,6 @@
 # Run Full AI Review Suite
 
-Executes **all 16 reviews** in the framework-defined order, then produces the Summary (999). The Specification (140) is generated afterwards only if the user asks.
+Executes **all 16 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999). The Specification (140) is generated afterwards only if the user asks.
 
 This document is selected via option **19** in `run-review.md`.
 
@@ -77,16 +77,26 @@ For each review:
 
 Before starting a later review, **skim the Phase 1 reports of the reviews already completed** for facts you can reuse (stack, structure, env vars, data model) and the Phase 2 reports for finding IDs to reference.
 
-### 3. Produce the Summary (999)
+### 3. Run the Meta-Review (990)
 
-When all 16 reviews are complete:
+After the 16 reviews, before the Summary:
+
+- Read `../reviews/990-meta-review/990-meta-review.md` and follow it.
+- Write `[project]-990-meta-review.md`.
+- The Meta-Review judges the **method** - coverage gaps, reviews to change, document defects,
+  and project risks no review owned. It does not re-review the code.
+- The Summary (999) consumes its coverage-gap section, so it must run **before** the Summary.
+
+### 4. Produce the Summary (999)
+
+When all 16 reviews and the Meta-Review (990) are complete:
 
 - Read `../reviews/999-summary/999-summary.md` and follow it.
 - Write `[project]-999-summary.md`.
 - If any review was skipped, follow the Summary's partial-run warning rules.
 - **Always include §6b Manual Runbooks & Pre-Live Gate** - if `docs/runbooks/pre-live-gate.md` is unsigned, the Summary must emit `⚠️ MANUAL GATE NOT SIGNED` and keep `Production Ready: PROVISIONAL` even if all code scores are green.
 
-### 4. Offer the Specification (140)
+### 5. Offer the Specification (140)
 
 Ask the user whether to generate an implementation specification (and at which severity level). Only generate it if asked - it is optional output.
 
@@ -107,9 +117,9 @@ Explain the trade-offs above, then - if the user still wants it - proceed as fol
 - Reviews are **independent analysis tasks** and may be delegated to subagents, subject to:
   - Each subagent receives the full framework context (`20-review-framework.md`) and the exact project name + report naming convention.
   - No two subagents write the same report file (each owns its review numbers).
-  - Do not parallelise the Summary or the Specification - they depend on all reports.
+  - Do not parallelise the Meta-Review (990), the Summary or the Specification - they depend on all reports.
 - After all subagents finish, perform a **deduplication sweep**: read every report, find findings that duplicate each other, keep the one in the owning review, and add references to the others. Note the sweep in the Summary.
-- The Summary (999) must wait until every report exists.
+- The Meta-Review (990) and the Summary (999) must wait until every report exists.
 
 ---
 

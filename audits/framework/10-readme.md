@@ -22,7 +22,7 @@ runners/run-review.md
 
 This will ask which review to run and guide the AI through the process.
 
-To run **all 16 reviews in sequence** (then the Summary), read:
+To run **all 16 reviews in sequence** (then the Meta-Review and the Summary), read:
 
 ```
 runners/run-full-suite.md
@@ -83,6 +83,8 @@ Cost Analysis
     ↓
 Maintainability
     ↓
+Meta-Review (990)
+    ↓
 Summary (999)
 ```
 
@@ -110,10 +112,11 @@ Some reviews may overlap, but each has a clearly defined primary responsibility.
 | Business Logic | Domain rule correctness, state machines, idempotency, race conditions |
 | Privacy & Compliance | PII handling, consent, retention, deletion, data flows |
 | Portability & Reusability | Project-agnostic code, extraction readiness, template-readiness |
+| Meta-Review (990) | Reviews the review process itself: coverage gaps, reviews to do differently, document defects, recommended suite changes |
 | Summary (999) | Aggregates all completed reviews; partial summaries allowed with warnings |
 | Specification (140) | Generates severity-based implementation plans |
 
-> The Summary is numbered **999** so it is always the last document in the suite. The Specification (140) is a generator, not a summary. See `framework/30-adding-a-review.md` for how to add or retire reviews.
+> The Summary is numbered **999** so it is always the last document in the suite. The Meta-Review (990) runs before it and reviews the method, not the code. The Specification (140) is a generator, not a summary. See `framework/30-adding-a-review.md` for how to add or retire reviews.
 
 ---
 
@@ -243,7 +246,8 @@ Changes should be versioned so previous review reports remain comparable.
 
 Current Version:
 
-**v1.1.0**
+**v1.2.0**
 
 Changes:
+- v1.2.0: Added the Meta-Review (990) - a self-critique of the review process that runs before the Summary and reports coverage gaps, reviews to do differently, document defects, and recommended suite changes. Removed the model recommendations from the Specification (140); difficulty is now model-agnostic.
 - v1.1.0: Added Testing (150), Business Logic (160), Privacy & Compliance (170), Portability & Reusability (180). Summary renumbered 130 → 999 with partial-summary support. Added extension guide (`30-adding-a-review.md`). Runner paths resolved relative to the runner file.

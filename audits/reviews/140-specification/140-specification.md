@@ -2,7 +2,7 @@
 
 ## Objective
 
-Generate a comprehensive, phase-based implementation specification that addresses findings from the 12 engineering reviews at a specific severity level.
+Generate a comprehensive, phase-based implementation specification that addresses findings from the 16 engineering reviews at a specific severity level.
 
 This document does **not** evaluate code quality or identify new issues - that work has already been done by the review reports.
 
@@ -203,7 +203,7 @@ Establish project-wide rules:
 
 ### 5. Difficulty Classification
 
-Each finding must be classified by difficulty level to help select the appropriate AI model for implementation.
+Each finding must be classified by difficulty level so the implementer can match the task to the capability of the model or person doing the work. Difficulty describes the **work**, not any specific tool: it is deliberately model-agnostic so this specification does not go stale as models change.
 
 **Difficulty Levels:**
 
@@ -225,20 +225,14 @@ Each finding must be classified by difficulty level to help select the appropria
 - Mistakes could cause subtle bugs or security issues
 - Examples: Service layer extraction, transaction fixes, security-critical changes
 
-**Recommended AI Models (OpenCode Go):**
-
-| Difficulty | Model | Use Case |
-|------------|-------|----------|
-| Simple | Deepseek V4 Flash | Mechanical tasks, clear instructions |
-| Moderate | Qwen 3.7 Plus | Everyday driver, balanced reasoning |
-| Complex | Kimi K3 or GLM 5.2 | Deep reasoning, high-stakes changes |
-
 **Classification Criteria:**
 
 Base difficulty on **risk** and **complexity**, not time:
 - **Risk**: What breaks if done wrong? (config change vs. security fix)
 - **Complexity**: How much reasoning/context needed? (isolated change vs. system-wide)
 - **Reversibility**: Easy to undo vs. hard to rollback
+
+> Do not name specific AI models. Model line-ups, names and versions change frequently; a named model recommendation ages badly and adds no engineering signal. Difficulty is the durable output.
 
 ### 6. Phase-by-Phase Breakdown
 
@@ -260,11 +254,11 @@ For each phase (1-16), create a section following this template:
 
 ### Difficulty Summary
 
-| # | Finding | Difficulty | Recommended Model |
-|---|---------|------------|-------------------|
-| X.1 | [Finding ID] - [Brief Title] | Simple | Deepseek V4 Flash |
-| X.2 | [Finding ID] - [Brief Title] | Moderate | Qwen 3.7 Plus |
-| X.3 | [Finding ID] - [Brief Title] | Complex | Kimi K3 or GLM 5.2 |
+| # | Finding | Difficulty |
+|---|---------|------------|
+| X.1 | [Finding ID] - [Brief Title] | Simple |
+| X.2 | [Finding ID] - [Brief Title] | Moderate |
+| X.3 | [Finding ID] - [Brief Title] | Complex |
 
 _All difficulty ratings are listed above for easy reference. See individual sections below for full implementation details._
 
@@ -277,8 +271,6 @@ _All difficulty ratings are listed above for easy reference. See individual sect
 **Category:** [e.g., Authentication, Performance, Database]
 
 **Difficulty:** [Simple/Moderate/Complex]
-
-**Recommended Model:** [Deepseek V4 Flash / Qwen 3.7 Plus / Kimi K3 or GLM 5.2]
 
 **Problem:**
 
@@ -378,9 +370,9 @@ Include one fully worked example phase to show the expected format and detail le
 
 ### Difficulty Summary
 
-| # | Finding | Difficulty | Recommended Model |
-|---|---------|------------|-------------------|
-| SEC-001 | Missing Rate Limiting on Authentication Endpoints | Complex | Kimi K3 or GLM 5.2 |
+| # | Finding | Difficulty |
+|---|---------|------------|
+| SEC-001 | Missing Rate Limiting on Authentication Endpoints | Complex |
 
 ---
 
@@ -391,8 +383,6 @@ Include one fully worked example phase to show the expected format and detail le
 **Category:** Authentication
 
 **Difficulty:** Complex
-
-**Recommended Model:** Kimi K3 or GLM 5.2
 
 **Problem:**
 

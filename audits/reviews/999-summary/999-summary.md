@@ -1,6 +1,6 @@
 # Engineering Review Summary
 
-Version: **v1.1.0**
+Version: **v1.2.0**
 
 ## Objective
 
@@ -54,6 +54,7 @@ docs/ai-review/reports/
 | Business Logic | `[project-name]-160-business-logic.md`, `[project-name]-160-business-logic-review.md` |
 | Privacy & Compliance | `[project-name]-170-privacy-compliance.md`, `[project-name]-170-privacy-compliance-review.md` |
 | Portability & Reusability | `[project-name]-180-portability.md`, `[project-name]-180-portability-review.md` |
+| Meta-Review (990, optional) | `[project-name]-990-meta-review.md` |
 
 Missing reports go into the warning block (§1 below). A summary is still produced from whatever exists.
 
@@ -311,7 +312,21 @@ If no specifications exist, recommend generating them using the Specification op
 
 ---
 
-## 14. Final Recommendation
+## 14. Review Methodology & Coverage (from Meta-Review 990)
+
+If `[project-name]-990-meta-review.md` exists, do **not** re-derive it - summarise its conclusions so the decision-maker sees them alongside the score:
+
+- **Method Confidence** (HIGH / MEDIUM / LOW / PROVISIONAL) and the one-line reason.
+- **Coverage gaps**: the risk classes no review owns, each with whether this project actually has the surface.
+- **Reviews to change**: splits, merges or rescopes proposed for the next cycle.
+- **Document defects**: anything that undermines trust in the reports.
+- **Project risks the process missed**: the `META-###` findings, carried into §5 and §7 so they are not lost behind a green code score.
+
+If the Meta-Review is missing, add it to the warning block and state that coverage is unverified.
+
+---
+
+## 15. Final Recommendation
 
 Provide a concise engineering conclusion.
 
@@ -333,6 +348,8 @@ Do not perform new analysis.
 Do not duplicate findings.
 
 Aggregate and synthesise.
+
+Consume the Meta-Review (990) output for coverage gaps and methodology confidence; do not duplicate or re-derive it.
 
 When scores conflict between reviews, note the discrepancy.
 

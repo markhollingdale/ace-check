@@ -8,10 +8,10 @@ import { isResolved, readFindingStatuses, setFindingStatus } from './lifecycle.j
 import { aiConfigFromEnv } from './ai-runner.js';
 import { projectNameFromCodebase } from './match.js';
 
-test('profiles: web-app includes all 16 modules', () => {
+test('profiles: web-app includes all 17 modules (16 reviews + meta-review)', () => {
   const p = profileById('web-app');
   assert.ok(p);
-  assert.equal(p.moduleNumbers.length, 16);
+  assert.equal(p.moduleNumbers.length, 17);
 });
 
 test('profiles: api excludes accessibility and SEO', () => {

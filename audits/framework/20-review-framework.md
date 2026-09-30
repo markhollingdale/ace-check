@@ -1,6 +1,6 @@
 # Review Framework
 
-Version: **v1.1.0**
+Version: **v1.2.0**
 
 This document defines the standard output format that every engineering review must follow.
 

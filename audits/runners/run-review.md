@@ -39,7 +39,8 @@ What review would you like to run?
 16. Portability & Reusability
 17. Summary (aggregates existing reviews - may run on a partial set, will warn about missing reviews)
 18. Specification (generates implementation plan - will ask which severity level)
-19. Full Suite (runs all 16 reviews in order, then Summary - see run-full-suite.md)
+19. Full Suite (runs all 16 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
+20. Meta-Review (reviews the review process itself - methodology, coverage gaps, document defects, recommended changes)
 ```
 
 Based on the selection, read the corresponding review document from the paths below and follow its instructions exactly.
@@ -67,6 +68,7 @@ Based on the selection, read the corresponding review document from the paths be
 | 17 | Summary | `../reviews/999-summary/999-summary.md` |
 | 18 | Specification | `../reviews/140-specification/140-specification.md` |
 | 19 | Full Suite | `../runners/run-full-suite.md` |
+| 20 | Meta-Review | `../reviews/990-meta-review/990-meta-review.md` |
 
 If the user selects **19 (Full Suite)**, stop here and follow `run-full-suite.md` instead.
 

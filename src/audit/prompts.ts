@@ -237,7 +237,7 @@ export function generateFullSuitePrompt(
   const sections = [
     '# Full AI Review Suite',
     '',
-    'Run the engineering reviews below in order, then the Summary. Follow the runner exactly.',
+    'Run the engineering reviews below in order, then the Meta-Review and the Summary. Follow the runner exactly.',
     '',
     '## Project context (auto-generated)',
     renderContext(ctx),
