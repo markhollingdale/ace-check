@@ -20,17 +20,40 @@ Read them in order before doing anything else.
 
 ---
 
-## Mode: Sequential (default - recommended)
+## Execution Modes
 
-The full suite runs **sequentially, in the framework-defined order**. Do not parallelise unless the user explicitly asks (see below).
+The suite runs in one of two modes. Both produce the same 17 review reports; they differ only in
+how the work is scheduled.
 
-Why sequential:
+- **Sequential** - one review at a time, in the framework-defined order. Best for a single agent,
+  or when you want each review to reuse the earlier reviews' Phase 1 documentation.
+- **Parallel (subagents)** - delegate reviews to independent subagents that run concurrently. Best
+  when the host supports subagents and wall-clock time matters. This is a **supported mode, not an
+  exception** - choose it whenever it is faster, without needing special permission.
 
-- **Earlier reports inform later reviews.** Each review's Phase 1 documentation (technology stack, project structure, environment variables, data model) is reused by later reviews instead of being re-discovered. Architecture (10) is first because it documents the foundation everything else builds on.
-- **The deduplication rule works best with shared context.** Reviews must reference existing finding IDs from earlier reports instead of duplicating them (e.g., a money-flow finding belongs in Business Logic 160, not in Testing 150's coverage notes).
-- **One shared context produces consistency**: one project name, one report style, no naming collisions, no contradictory findings.
-- **The Summary requires all 17 reports anyway** - a parallel run still needs a sequential aggregation pass at the end.
-- **Parallelism multiplies cost**: N agents re-read the same codebase independently instead of reusing earlier Phase 1 docs.
+### Why the order exists (and why parallel still works)
+
+The reviews are numbered in a **logical** order, not a hard execution dependency:
+
+- Architecture (10) is first because its Phase 1 documentation (stack, structure, env vars, data
+  model) is useful context for the rest.
+- The anti-duplication rule works best when a later review can see earlier finding IDs.
+
+Sequential mode gets that shared context for free. Parallel mode does **not** - each subagent works
+from the framework and the codebase alone. That is acceptable because the suite **reconciles
+afterwards**: the mandatory deduplication sweep and the Summary's severity calibration catch
+overlaps, duplicates and inconsistent grading. Loss of shared context is a trade-off to note, not a
+reason to block a parallel run.
+
+### Rules for both modes
+
+- Only the **Meta-Review (990), the Summary (999) and the Specification (140)** require every
+  report to exist first; never start those until all 17 reviews are written.
+- In parallel mode the **deduplication sweep is mandatory** - it is the price of running
+  concurrently.
+- Each report is owned by exactly one agent; never let two agents write the same file.
+- Reports must follow the same framework (`20-review-framework.md`) and naming convention in either
+  mode, so the outputs are interchangeable.
 
 ---
 
@@ -44,7 +67,11 @@ Why sequential:
   docs/ai-review/reports/
   ```
 
-### 2. Run each review, in order
+### 2. Run each review
+
+Run the reviews below **sequentially in order**, or as **parallel subagents** (one review per
+subagent) according to the execution mode above. The table defines the full set of reviews and
+their report filenames; the order matters most in sequential mode.
 
 | # | Review | Phase 1 Report | Phase 2 Report |
 |---|--------|----------------|----------------|
@@ -76,7 +103,7 @@ For each review:
    - A Critical finding needs immediate confirmation (e.g., suspected active data exposure).
    - The user interrupts.
 
-Before starting a later review, **skim the Phase 1 reports of the reviews already completed** for facts you can reuse (stack, structure, env vars, data model) and the Phase 2 reports for finding IDs to reference.
+Before starting a later review **in sequential mode**, skim the Phase 1 reports of the reviews already completed for facts you can reuse (stack, structure, env vars, data model) and the Phase 2 reports for finding IDs to reference. In parallel mode this step does not apply - the deduplication sweep and calibration reconcile afterwards.
 
 ### 3. Run the Meta-Review (990)
 
@@ -117,16 +144,28 @@ Generating the specification is **not optional** and is done without asking the 
 
 ---
 
-## If the User Asks for Parallel Execution
+## Parallel Mode Details (subagents)
 
-Explain the trade-offs above, then - if the user still wants it - proceed as follows:
+When running in parallel, delegate each review to its own subagent:
 
-- Reviews are **independent analysis tasks** and may be delegated to subagents, subject to:
-  - Each subagent receives the full framework context (`20-review-framework.md`) and the exact project name + report naming convention.
-  - No two subagents write the same report file (each owns its review numbers).
-  - Do not parallelise the Meta-Review (990), the Summary or the Specification - they depend on all reports.
-- After all subagents finish, perform a **deduplication sweep**: read every report, find findings that duplicate each other, keep the one in the owning review, and add references to the others. Note the sweep in the Summary.
-- The Meta-Review (990) and the Summary (999) must wait until every report exists.
+- Each subagent receives the full framework context (`20-review-framework.md`), the project name,
+  and the exact report naming convention for its review.
+- No two subagents write the same report file - each owns its review number.
+- Do not parallelise the Meta-Review (990), the Summary (999) or the Specification (140) - they
+  depend on every report.
+- Subagents do not share context, so duplicates and grading drift are expected. The reconciliation
+  below is what makes the mode safe.
+
+### Reconciliation (mandatory after a parallel run)
+
+After all subagents finish:
+
+1. **Deduplication sweep** - read every report, find findings that duplicate each other, keep the
+   one in the owning review, and replace the others with a reference to its ID. Note the sweep in
+   the Summary.
+2. **Severity calibration** - run the Summary's calibration pass (Phase 1.5) as normal; it also
+   normalises any drift between independent subagents.
+3. Only then run the Meta-Review (990), the Summary (999) and the Specification (140).
 
 ---
 

@@ -56,7 +56,9 @@ Whenever possible it should inspect source code, configuration files, dependenci
 
 # Review Workflow
 
-Reviews should normally be completed in the following order.
+Reviews are numbered in a logical order. Run them **sequentially in this order**, or as **parallel
+subagents** - both are supported. A parallel run must reconcile afterwards (deduplication sweep +
+severity calibration); see `runners/run-full-suite.md`.
 
 ```
 Architecture
@@ -252,6 +254,6 @@ Current Version:
 **v2.0.0**
 
 Changes:
-- v2.0.0 (breaking format): Added mandatory finding fields `Title`, `Confidence` and `Evidence / Repro`, and header fields `Commit`, `Branch` and `Run mode`. Added the Abuse, Bot & Crawl Resilience review (190), split out of Security (20). Added a severity-calibration pass before the Summary. Production Readiness (100) and Cost (110) now split verified vs unverified/`UNKNOWN` scoring. Performance (30) and Cost (110) require a quantified measure per finding. Testing (150) clarifies which test runs are permitted without asking.
+- v2.0.0 (breaking format): Added mandatory finding fields `Title`, `Confidence` and `Evidence / Repro`, and header fields `Commit`, `Branch` and `Run mode`. Added the Abuse, Bot & Crawl Resilience review (190), split out of Security (20). Added a severity-calibration pass before the Summary. Production Readiness (100) and Cost (110) now split verified vs unverified/`UNKNOWN` scoring. Performance (30) and Cost (110) require a quantified measure per finding. Testing (150) clarifies which test runs are permitted without asking. The full-suite runner now treats sequential and parallel (subagent) execution as equal modes, with a mandatory reconciliation step after a parallel run.
 - v1.2.0: Added the Meta-Review (990) - a self-critique of the review process that runs before the Summary and reports coverage gaps, reviews to do differently, document defects, and recommended suite changes. Removed the model recommendations from the Specification (140); difficulty is now model-agnostic.
 - v1.1.0: Added Testing (150), Business Logic (160), Privacy & Compliance (170), Portability & Reusability (180). Summary renumbered 130 → 999 with partial-summary support. Added extension guide (`30-adding-a-review.md`). Runner paths resolved relative to the runner file.

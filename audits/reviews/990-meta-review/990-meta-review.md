@@ -214,11 +214,14 @@ Rules:
 
 The **v2.0.0 baseline** now includes: per-finding `Title`, `Confidence` and `Evidence / Repro`;
 header `Commit` / `Branch` / `Run mode`; a severity-calibration pass before the Summary;
-verified vs unverified/`UNKNOWN` scoring in Production (100) and Cost (110); and mandatory
-quantification in Performance (30) and Cost (110).
+verified vs unverified/`UNKNOWN` scoring in Production (100) and Cost (110); mandatory
+quantification in Performance (30) and Cost (110); and explicit sequential/parallel execution modes
+with a mandatory post-run reconciliation (deduplication sweep + calibration) in the full-suite
+runner.
 
 Do **not** re-recommend these. Instead, verify they are actually used: if a report omits a required
-field or skips calibration, report that as a document/process defect (§6), not as a framework gap.
+field, skips calibration, or a parallel run did not record its deduplication sweep, report that as a
+document/process defect (§6), not as a framework gap.
 
 Recommend only what is still missing, and only where the evidence supports it:
 
@@ -226,7 +229,6 @@ Recommend only what is still missing, and only where the evidence supports it:
   cross-run status is not lost when finding IDs restart each run.
 - **Risk-weighted headline scoring** (a plain mean lets a low-risk area carry the same weight as
   Security), plus a score distribution or confidence range.
-- **Formal parallel orchestration and a mandatory reconciliation step**, recorded in the Summary.
 - Any further change to the finding template must be treated as a **breaking framework change**
   and versioned accordingly.
 
@@ -246,7 +248,7 @@ Give a short, prioritised list, split into:
 
 - **Immediate** (before the next full run): document fixes, framework fields, runner clarifications.
 - **Next cycle**: proposed new reviews to add, and existing reviews to split or rescope.
-- **Backlog**: larger structural changes (ledger, weighting, parallel reconciliation).
+- **Backlog**: larger structural changes (findings ledger, risk-weighted scoring).
 
 Name each action with the specific file or review number it touches.
 

@@ -6,8 +6,8 @@ into AceCheck. It was previously maintained as a standalone `ai-review` collecti
 The framework defines a versioned suite of structured engineering reviews (17
 reviews + a Meta-Review self-critique + a Summary aggregator + a Specification
 generator). Each review follows a shared finding format with IDs, severity,
-evidence, recommendations, and estimated effort, and can be run standalone or as
-a full sequential suite.
+evidence, recommendations, and estimated effort, and can be run standalone or as a
+full suite (sequential or parallel subagents).
 
 ## Start here
 
