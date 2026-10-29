@@ -440,18 +440,31 @@ Reference: review 190.
 
 ---
 
-# Stripe Security
+# Payment Provider Security
 
-If Stripe is used, review:
+If a payment provider is used, review:
 
-- Webhook verification
-- Subscription validation
-- Payment state
-- Checkout flow
-- Customer ownership
-- Refund handling
+- Webhook signature verification and replay protection.
+- Subscription validation and payment state.
+- Checkout flow and customer ownership.
+- Refund authorization and cumulative/remaining-balance limits.
+- Test/live key separation by deployment environment (a preview deployment must
+  not be able to take live money).
+- Webhook secret mode and event `livemode` matching the configured key mode.
+- Idempotency keys on outbound create/refund operations where retries are
+  possible.
+- Transient-vs-permanent webhook failure semantics and the retry/dead-letter or
+  reconciliation path.
+- Customer Portal session authorization, scoping, return URL safety, and rate
+  limiting.
+- No card data and no secret key in the client bundle.
 
-Verify premium access cannot be obtained without successful payment.
+Verify premium access cannot be obtained without successful payment, and that a
+paid customer cannot be billed after the entitlement is removed.
+
+Cross-reference Billing & Subscription Lifecycle (250) for renewal, dunning,
+cancellation, refund, and dispute correctness; this review owns the security
+enforcement around those flows.
 
 ---
 

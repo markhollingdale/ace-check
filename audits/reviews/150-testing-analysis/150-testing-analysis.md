@@ -313,8 +313,14 @@ Review whether the following are covered by tests:
 - State machines and workflow transitions (cross-reference: Business Logic Review 160)
 - Idempotency of webhooks and jobs (cross-reference: Business Logic Review 160)
 - Concurrency and race conditions (cross-reference: Business Logic Review 160)
+- Recurring subscription lifecycle: initial charge, renewal, failed renewal,
+  dunning/recovery, card update, cancellation, full/partial refund, dispute
+  won/lost, duplicate subscription, and missed webhook. Use provider test clocks
+  or an equivalent time-travel mechanism where available; a webhook route test
+  that returns 200 is **not** lifecycle coverage. (Cross-reference: Billing &
+  Subscription Lifecycle Review 250.)
 
-If coverage is missing, the finding belongs here (test coverage), while the underlying logic issue belongs to the Business Logic review.
+If coverage is missing, the finding belongs here (test coverage), while the underlying logic issue belongs to the Business Logic or Billing Lifecycle review.
 
 ---
 

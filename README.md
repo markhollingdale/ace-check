@@ -34,7 +34,7 @@ Project ──owns──▶ Run ──contains──▶ Stage ──produces─�
 | 8  | Dynamic scan (DAST)        | OWASP ZAP (via Docker)   | staging  |
 | 9  | Fuzzing & discovery        | ffuf                     | staging  |
 | 10 | Abuse & authorisation      | Playwright (imported)    | staging  |
-| 11 | Deep review (AI)           | the 16-module framework  | codebase |
+| 11 | Deep review (AI)           | the 18-review framework  | codebase |
 | 12 | Verdict                    | built-in gate            | -        |
 
 - **Finding** - one unified shape across `web`, `static`, `dynamic` and `review`

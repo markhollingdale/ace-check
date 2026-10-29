@@ -25,6 +25,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { number: 170, title: 'Privacy & Compliance', prefix: 'PRIV', category: 'privacy-compliance', domain: 'PRIVACY', consumesWebScan: false },
   { number: 180, title: 'Portability & Reusability', prefix: 'PORT', category: 'portability', domain: 'PORTABILITY', consumesWebScan: false },
   { number: 190, title: 'Abuse, Bot & Crawl Resilience', prefix: 'ABUSE', category: 'abuse', domain: 'SECURITY', consumesWebScan: false },
+  { number: 250, title: 'Billing & Subscription Lifecycle', prefix: 'BILL', category: 'billing-lifecycle', domain: 'BILLING', consumesWebScan: false },
   { number: 990, title: 'Review Methodology & Self-Critique', prefix: 'META', category: 'methodology', domain: 'METHODOLOGY', consumesWebScan: false },
 ];
 

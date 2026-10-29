@@ -139,9 +139,9 @@ export const STAGE_CATALOG: StageDef[] = [
     short: 'Review',
     source: 'review',
     description:
-      'The 17 engineering reviews, run in an agent or in-tool, then ingested.',
+      'The 18 engineering reviews, run in an agent or in-tool, then ingested.',
     requires: { codebase: true },
-    tools: ['16-module review framework', 'your AI agent (or a configured API)'],
+    tools: ['18-review framework', 'your AI agent (or a configured API)'],
     output: 'Findings imported from each review report.',
   },
   {

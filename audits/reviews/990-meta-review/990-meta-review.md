@@ -1,6 +1,6 @@
 # Review Methodology & Self-Critique (Meta-Review)
 
-Version: **v2.0.0**
+Version: **v2.1.0**
 
 ## Objective
 
@@ -79,6 +79,10 @@ Before judging the method, reconstruct what actually ran. Record:
 
 - Which numbered reviews produced reports, and which were skipped or missing.
 - The framework version in the headers (are they all the same version?).
+- Whether the canonical suite path/version matches the reports, whether a stale duplicate copy
+  exists, and whether the AceCheck module catalog count matches the runner/README.
+- Whether the report-format filename is consistent (`framework/20-review-framework.md` in the
+  master; older reports may cite `framework-format.md`).
 - Whether any report is stale relative to the current code (dates, commit anchors if present).
 - Whether the run was sequential or parallel, and whether a deduplication sweep was recorded.
 - Which project risks were **in scope** of at least one review, and which were **outside every
@@ -154,7 +158,9 @@ Rules:
   search relevance and ranking correctness; internationalisation, localisation and timezone
   correctness; software licensing / IP (copyleft contamination); operator safety and
   reversibility of destructive/bulk admin actions; browser/device support; analytics and
-  data-pipeline trust-boundary correctness.
+  data-pipeline trust-boundary correctness; recurring billing and subscription lifecycle
+  correctness (renewal, failed payment/dunning, card update, cancellation, refunds,
+  disputes, reconciliation, invoice ledger).
 - A gap is only actionable if the project has the surface - prefer evidence over speculation.
 
 ---

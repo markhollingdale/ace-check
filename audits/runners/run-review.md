@@ -40,8 +40,9 @@ What review would you like to run?
 17. Abuse, Bot & Crawl Resilience
 18. Summary (aggregates existing reviews - may run on a partial set, will warn about missing reviews)
 19. Specification (generates implementation plans; in the Full Suite this runs automatically for every severity that has findings)
-20. Full Suite (runs all 17 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
+20. Full Suite (runs all 18 reviews in order, then Meta-Review, then Summary - see run-full-suite.md)
 21. Meta-Review (reviews the review process itself - methodology, coverage gaps, document defects, recommended changes)
+22. Billing & Subscription Lifecycle
 ```
 
 Based on the selection, read the corresponding review document from the paths below and follow its instructions exactly.
@@ -71,6 +72,7 @@ Based on the selection, read the corresponding review document from the paths be
 | 19 | Specification | `../reviews/140-specification/140-specification.md` |
 | 20 | Full Suite | `../runners/run-full-suite.md` |
 | 21 | Meta-Review | `../reviews/990-meta-review/990-meta-review.md` |
+| 22 | Billing & Subscription Lifecycle | `../reviews/250-billing-lifecycle-analysis/250-billing-lifecycle-analysis.md` |
 
 If the user selects **20 (Full Suite)**, stop here and follow `run-full-suite.md` instead.
 

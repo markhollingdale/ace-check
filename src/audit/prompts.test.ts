@@ -54,6 +54,7 @@ test('generateFullSuitePrompt: inlines every review plus the framework and runne
     'reviews/20-security-analysis/20-security-analysis.md',
     'reviews/180-portability-analysis/180-portability-analysis.md',
     'reviews/190-abuse-bot-resilience/190-abuse-bot-resilience.md',
+    'reviews/250-billing-lifecycle-analysis/250-billing-lifecycle-analysis.md',
     'reviews/990-meta-review/990-meta-review.md',
     'reviews/140-specification/140-specification.md',
     'reviews/999-summary/999-summary.md',

@@ -22,7 +22,7 @@ runners/run-review.md
 
 This will ask which review to run and guide the AI through the process.
 
-To run **all 17 reviews in sequence** (then the Meta-Review and the Summary), read:
+To run **all 18 reviews in sequence** (then the Meta-Review and the Summary), read:
 
 ```
 runners/run-full-suite.md
@@ -85,6 +85,16 @@ Cost Analysis
     ↓
 Maintainability
     ↓
+Testing
+    ↓
+Business Logic
+    ↓
+Billing & Subscription Lifecycle
+    ↓
+Privacy & Compliance
+    ↓
+Portability & Reusability
+    ↓
 Abuse, Bot & Crawl Resilience
     ↓
 Meta-Review (990)
@@ -114,6 +124,7 @@ Some reviews may overlap, but each has a clearly defined primary responsibility.
 | Maintainability | Technical debt and long-term sustainability |
 | Testing | Test strategy, quality, coverage and reliability |
 | Business Logic | Domain rule correctness, state machines, idempotency, race conditions |
+| Billing & Subscription Lifecycle | Recurring billing correctness: renewal, dunning, card update, cancellation, refunds, disputes, reconciliation |
 | Privacy & Compliance | PII handling, consent, retention, deletion, data flows |
 | Portability & Reusability | Project-agnostic code, extraction readiness, template-readiness |
 | Abuse, Bot & Crawl Resilience | Bots, crawlers, spam, rate-limit completeness, engagement abuse, cost amplification |
@@ -251,9 +262,10 @@ Changes should be versioned so previous review reports remain comparable.
 
 Current Version:
 
-**v2.0.0**
+**v2.1.0**
 
 Changes:
+- v2.1.0 (additive): Added the Billing & Subscription Lifecycle review (250) and registered it in the AceCheck module catalog. Strengthened Business Logic (160), Security (20), Production Readiness (100), Testing (150) and the Meta-Review (990) with recurring-billing lifecycle requirements. Reconciled the report-format filename (`framework/20-review-framework.md`; older reports may cite `framework-format.md`). Retired the stale standalone `AI Dev Prompts/ai-review` copy in favour of the vendored `ace-check/audits` master.
 - v2.0.0 (breaking format): Added mandatory finding fields `Title`, `Confidence` and `Evidence / Repro`, and header fields `Commit`, `Branch` and `Run mode`. Added the Abuse, Bot & Crawl Resilience review (190), split out of Security (20). Added a severity-calibration pass before the Summary. Production Readiness (100) and Cost (110) now split verified vs unverified/`UNKNOWN` scoring. Performance (30) and Cost (110) require a quantified measure per finding. Testing (150) clarifies which test runs are permitted without asking. The full-suite runner now treats sequential and parallel (subagent) execution as equal modes, with a mandatory reconciliation step after a parallel run.
 - v1.2.0: Added the Meta-Review (990) - a self-critique of the review process that runs before the Summary and reports coverage gaps, reviews to do differently, document defects, and recommended suite changes. Removed the model recommendations from the Specification (140); difficulty is now model-agnostic.
 - v1.1.0: Added Testing (150), Business Logic (160), Privacy & Compliance (170), Portability & Reusability (180). Summary renumbered 130 → 999 with partial-summary support. Added extension guide (`30-adding-a-review.md`). Runner paths resolved relative to the runner file.

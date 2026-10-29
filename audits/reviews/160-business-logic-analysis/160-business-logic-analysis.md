@@ -8,7 +8,7 @@ The goal is to evaluate whether the business rules - the rules that define how t
 
 This review focuses **only on business logic correctness**.
 
-It does **not** review security *abuse* of business logic (duplicate subscriptions, quota bypasses, workflow manipulation) - that is owned by the Security Review (20). This review owns whether the logic is *correct*.
+It does **not** review security *abuse* of business logic (quota bypasses, workflow manipulation) - that is owned by the Security Review (20). This review owns whether the logic is *correct*. Duplicate-subscription prevention and card-update/portal safety are lifecycle correctness and belong here as well as in Billing & Subscription Lifecycle (250); reference the security angle to 20 rather than duplicating it.
 
 Do **not** perform detailed reviews of architecture, database design, performance or testing except where they directly affect business logic correctness.
 
@@ -220,6 +220,33 @@ Review:
 - Cancellation/refund workflows that must cascade to other entities
 - Archival/cleanup jobs that assume states that no longer exist
 - Scheduled jobs interacting with user-initiated changes (e.g., season rollover during an active match)
+
+---
+
+# Subscription, Renewal & Dunning Lifecycle (Required for Recurring Products)
+
+If the product has a recurring subscription, trace one subscription through at
+least 13 months and review:
+
+- Initial charge, renewal, and the authoritative source of the next period end.
+- Failed renewal, dunning/retry, grace period, recovery, and final cancellation.
+- Card update and Customer Portal authorization (security depth belongs in 20).
+- Cancel-at-period-end, immediate cancellation, pause, and resume.
+- Full and partial refunds, and their effect on entitlement.
+- Dispute opened, won, and lost.
+- Duplicate checkout/subscription and stale or out-of-order webhook events.
+- Missed webhook recovery and reconciliation.
+- The entitlement rule at every state: can a paid customer lose access, or keep
+  access without paying?
+- Whether a stale deletion event can wipe a newer customer's entitlement.
+- Whether bulk admin actions are as safe as the single-row action.
+
+State explicitly whether the policy for each failure/dispute/refund case is
+intentional. Do not treat "the code does X" as proof that X is correct.
+
+Cross-reference Billing & Subscription Lifecycle (250) for the full lifecycle
+specification; this section is the correctness check inside the business-logic
+review.
 
 ---
 

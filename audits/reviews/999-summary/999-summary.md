@@ -52,6 +52,7 @@ docs/ai-review/reports/
 | Maintainability | `[project-name]-120-maintainability.md`, `[project-name]-120-maintainability-review.md` |
 | Testing | `[project-name]-150-testing.md`, `[project-name]-150-testing-review.md` |
 | Business Logic | `[project-name]-160-business-logic.md`, `[project-name]-160-business-logic-review.md` |
+| Billing & Subscription Lifecycle | `[project-name]-250-billing-lifecycle.md`, `[project-name]-250-billing-lifecycle-review.md` |
 | Privacy & Compliance | `[project-name]-170-privacy-compliance.md`, `[project-name]-170-privacy-compliance-review.md` |
 | Portability & Reusability | `[project-name]-180-portability.md`, `[project-name]-180-portability-review.md` |
 | Abuse, Bot & Crawl Resilience | `[project-name]-190-abuse-bot-resilience.md`, `[project-name]-190-abuse-bot-resilience-review.md` |
@@ -144,6 +145,11 @@ Calculate an overall score based on all review scores.
 
 Explain the weighting used.
 
+Treat a billing lifecycle failure that can take money without granting access, or
+grant access without collecting money, as revenue-critical: do not let it be
+averaged away by a high score in a low-risk domain. If a recurring billing review
+(250) is missing, say so explicitly.
+
 If the summary is partial, state that the score excludes the missing reviews.
 
 ---
@@ -168,6 +174,7 @@ Present a table of all review scores:
 | Maintainability | X/100 | YES/NO |
 | Testing | X/100 | YES/NO |
 | Business Logic | X/100 | YES/NO |
+| Billing & Subscription Lifecycle | X/100 | YES/NO |
 | Privacy & Compliance | X/100 | YES/NO |
 | Portability & Reusability | X/100 | YES/NO |
 | Abuse, Bot & Crawl Resilience | X/100 | YES/NO |

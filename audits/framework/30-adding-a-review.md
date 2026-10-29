@@ -1,6 +1,6 @@
 # Adding a Review to the Suite
 
-Version: **v2.0.0**
+Version: **v2.1.0**
 
 This document is the checklist for extending the review suite with a new review standard. Follow it every time a review is added, renamed, or retired so the suite stays internally consistent.
 
@@ -65,12 +65,19 @@ Reuse an existing review as a structural template (e.g., `60-code-quality-analys
 | File | What to change |
 | ---- | -------------- |
 | `audits/runners/run-review.md` | Add the option to the selection prompt and the file-path table |
-| `audits/framework/10-readme.md` | Add a row to the Current Reviews table; update workflow order if it has a natural position |
-| `audits/README.md` (framework root) | Update the review count and "What's Included" |
+| `audits/runners/run-full-suite.md` | Update the review count and add the row in the full-suite table |
+| `audits/framework/10-readme.md` | Add a row to the Current Reviews table; update workflow order and version |
+| `audits/framework/20-review-framework.md` | Update the version if the format changes (additive reviews should not change it) |
+| `audits/README.md` (framework root) | Update the review count and layout |
 | `audits/reviews/999-summary/999-summary.md` | Add rows to the prerequisites table and the review-scores table |
 | `audits/reviews/140-specification/140-specification.md` | Add a row to the prerequisites table and a phase to the phase map |
+| `src/audit/module-catalog.ts` | Register the module so AceCheck discovers it |
+| `src/audit/profiles.ts` | Update only if a profile needs an explicit exclusion; "every review" profiles derive from the catalog |
+| `src/audit/phase4.test.ts` and catalog/prompt tests | Update the module count and any enumerated-module expectations |
 
-All five updates must land in the same commit - partial updates leave the suite broken.
+All updates must land in the same commit - partial updates leave the suite broken.
+Before merging, confirm the master path/version and the module-catalog count match
+the runner and README.
 
 ## 6. Run a smoke test
 

@@ -131,6 +131,24 @@ Explain operational dependencies.
 
 ---
 
+## 8b. Recurring Billing Operations (Conditional)
+
+If the product sells a subscription, document:
+
+- Provider dunning / Smart Retries / cancel-after-final-retry settings.
+- Customer email, receipt, and invoice settings.
+- Customer Portal configuration (payment method, invoices, cancellation).
+- The complete webhook event list and whether it matches the code.
+- The reconciliation job and schedule.
+- The failed-payment alert channel and runbook.
+- A tested card-update path.
+- Refund/dispute/chargeback runbook and evidence ownership.
+
+Exclude unverified dashboard facts from the headline score and mark them
+`UNKNOWN` / `Needs manual verification`.
+
+---
+
 ## 9. Operations
 
 Document:
@@ -338,6 +356,25 @@ Review:
 - Operational documentation (RTO/RPO, contacts, escalation)
 
 Determine whether the application can be effectively supported in production. If the only rollback is `git revert + redeploy (8 min)` and the spike is 100 req/s, flag as **High** - you need a flag or Challenge toggle that works in seconds.
+
+---
+
+# Recurring Billing Readiness
+
+If the product sells a subscription, review:
+
+- Dunning/retry/auto-cancel is configured, not just assumed.
+- The customer can update their card and cancel without contacting support.
+- Failed payments and action-required events reach a watched alert channel.
+- The webhook event list matches the handlers in code.
+- A reconciliation job repairs missed/out-of-order events.
+- Renewal receipts/invoices exist and are linked from the customer record.
+- The refund/dispute runbook is current and owned.
+- A `past_due` or unpaid subscription is visible to the operator and does not
+  silently keep projecting revenue.
+
+A recurring product with no tested failed-payment/card-update path is **NO-GO**
+for production, regardless of the happy-path checkout score.
 
 ---
 

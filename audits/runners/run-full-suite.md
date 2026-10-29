@@ -1,6 +1,6 @@
 # Run Full AI Review Suite
 
-Executes **all 17 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999), then always generates the Specification (140) for every severity level that has findings.
+Executes **all 18 reviews** in the framework-defined order, then the **Meta-Review (990)**, then produces the Summary (999), then always generates the Specification (140) for every severity level that has findings.
 
 This document is selected via option **20** in `run-review.md`.
 
@@ -22,7 +22,7 @@ Read them in order before doing anything else.
 
 ## Execution Modes
 
-The suite runs in one of two modes. Both produce the same 17 review reports; they differ only in
+The suite runs in one of two modes. Both produce the same 18 review reports; they differ only in
 how the work is scheduled.
 
 - **Sequential** - one review at a time, in the framework-defined order. Best for a single agent,
@@ -48,7 +48,7 @@ reason to block a parallel run.
 ### Rules for both modes
 
 - Only the **Meta-Review (990), the Summary (999) and the Specification (140)** require every
-  report to exist first; never start those until all 17 reviews are written.
+  report to exist first; never start those until all 18 reviews are written.
 - In parallel mode the **deduplication sweep is mandatory** - it is the price of running
   concurrently.
 - Each report is owned by exactly one agent; never let two agents write the same file.
@@ -89,9 +89,10 @@ their report filenames; the order matters most in sequential mode.
 | 12 | Maintainability (120) | `[project]-120-maintainability.md` | `[project]-120-maintainability-review.md` |
 | 13 | Testing (150) | `[project]-150-testing.md` | `[project]-150-testing-review.md` |
 | 14 | Business Logic (160) | `[project]-160-business-logic.md` | `[project]-160-business-logic-review.md` |
-| 15 | Privacy & Compliance (170) | `[project]-170-privacy-compliance.md` | `[project]-170-privacy-compliance-review.md` |
-| 16 | Portability & Reusability (180) | `[project]-180-portability.md` | `[project]-180-portability-review.md` |
-| 17 | Abuse, Bot & Crawl Resilience (190) | `[project]-190-abuse-bot-resilience.md` | `[project]-190-abuse-bot-resilience-review.md` |
+| 15 | Billing & Subscription Lifecycle (250) | `[project]-250-billing-lifecycle.md` | `[project]-250-billing-lifecycle-review.md` |
+| 16 | Privacy & Compliance (170) | `[project]-170-privacy-compliance.md` | `[project]-170-privacy-compliance-review.md` |
+| 17 | Portability & Reusability (180) | `[project]-180-portability.md` | `[project]-180-portability-review.md` |
+| 18 | Abuse, Bot & Crawl Resilience (190) | `[project]-190-abuse-bot-resilience.md` | `[project]-190-abuse-bot-resilience-review.md` |
 
 For each review:
 
@@ -107,7 +108,7 @@ Before starting a later review **in sequential mode**, skim the Phase 1 reports 
 
 ### 3. Run the Meta-Review (990)
 
-After the 17 reviews, before the Summary:
+After the 18 reviews, before the Summary:
 
 - Read `../reviews/990-meta-review/990-meta-review.md` and follow it.
 - Write `[project]-990-meta-review.md`.
@@ -117,7 +118,7 @@ After the 17 reviews, before the Summary:
 
 ### 4. Produce the Summary (999)
 
-When all 17 reviews and the Meta-Review (990) are complete:
+When all 18 reviews and the Meta-Review (990) are complete:
 
 - Read `../reviews/999-summary/999-summary.md` and follow it.
 - Write `[project]-999-summary.md`.

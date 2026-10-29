@@ -75,6 +75,7 @@ docs/ai-review/reports/
 | Maintainability | `[project-name]-120-maintainability.md`, `[project-name]-120-maintainability-review.md` |
 | Testing | `[project-name]-150-testing.md`, `[project-name]-150-testing-review.md` |
 | Business Logic | `[project-name]-160-business-logic.md`, `[project-name]-160-business-logic-review.md` |
+| Billing & Subscription Lifecycle | `[project-name]-250-billing-lifecycle.md`, `[project-name]-250-billing-lifecycle-review.md` |
 | Privacy & Compliance | `[project-name]-170-privacy-compliance.md`, `[project-name]-170-privacy-compliance-review.md` |
 | Portability & Reusability | `[project-name]-180-portability.md`, `[project-name]-180-portability-review.md` |
 | Abuse, Bot & Crawl Resilience | `[project-name]-190-abuse-bot-resilience.md`, `[project-name]-190-abuse-bot-resilience-review.md` |
@@ -103,7 +104,7 @@ Extract from each:
 
 # Phase 2 - Organize by Review
 
-Group all findings for the selected severity into 17 phases following this structure:
+Group all findings for the selected severity into 18 phases following this structure:
 
 | Phase | Review |
 |-------|--------|
@@ -121,16 +122,17 @@ Group all findings for the selected severity into 17 phases following this struc
 | Phase 12 | Maintainability (120) |
 | Phase 13 | Testing (150) |
 | Phase 14 | Business Logic (160) |
-| Phase 15 | Privacy & Compliance (170) |
-| Phase 16 | Portability & Reusability (180) |
-| Phase 17 | Abuse, Bot & Crawl Resilience (190) |
+| Phase 15 | Billing & Subscription Lifecycle (250) |
+| Phase 16 | Privacy & Compliance (170) |
+| Phase 17 | Portability & Reusability (180) |
+| Phase 18 | Abuse, Bot & Crawl Resilience (190) |
 
 **Phase numbering:**
 - Phase 1: [Selected Severity] Architecture findings
 - Phase 2: [Selected Severity] Security findings
 - Phase 3: [Selected Severity] Performance findings
 - ...
-- Phase 17: [Selected Severity] Abuse, Bot & Crawl Resilience findings
+- Phase 18: [Selected Severity] Abuse, Bot & Crawl Resilience findings
 
 If a review has no findings at the selected severity level, skip that phase and note it as "No findings at this severity level."
 
